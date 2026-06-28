@@ -1,25 +1,42 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Clock3, Palette, Phone, Store } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import { getBrand } from "../data/brands";
 
-export function Settings({ brandId, onBrandChange }) {
+function buildDefaults(brandId) {
   const brand = getBrand(brandId);
-  const defaults = useMemo(
-    () => ({
-      brandName: brand.name,
-      themeColor: brand.themeColor,
-      supportPhone: "+91 90000 00000",
-      welcomeMessage: `Hi, welcome to ${brand.name} support. How can I help?`,
-      quickActions: "Track my order, Return / Exchange, Shipping & Delivery, Talk to Support"
-    }),
-    [brand]
-  );
+  return {
+    brandName: brand.name,
+    industry: brand.industry,
+    themeColor: brand.themeColor,
+    supportPhone: "+91 90000 00000",
+    supportEmail: "support@example.com",
+    welcomeMessage: `Hi, welcome to ${brand.name} support. How can I help?`,
+    quickActions: ["Track my order", "Return / Exchange", "Shipping & Delivery", "Talk to Support"],
+    businessHours: "Mon-Sat, 10:00 AM - 7:00 PM IST",
+    escalationRules: ["Fraud/legal/police keywords", "Abusive language", "Medical allergy or safety complaint"]
+  };
+}
+
+export function Settings({ brandId, onBrandChange }) {
+  const defaults = useMemo(() => buildDefaults(brandId), [brandId]);
   const [settings, setSettings] = useState(defaults);
+
+  useEffect(() => {
+    setSettings(buildDefaults(brandId));
+  }, [brandId]);
 
   function update(field, value) {
     setSettings((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateQuickAction(index, value) {
+    setSettings((current) => ({
+      ...current,
+      quickActions: current.quickActions.map((action, actionIndex) => (actionIndex === index ? value : action))
+    }));
   }
 
   function reset() {
@@ -31,32 +48,54 @@ export function Settings({ brandId, onBrandChange }) {
       <PageHeader
         eyebrow="Demo settings"
         title="Brand settings"
-        description="Editable UI only. These settings are local to the dashboard session and are not persisted yet."
+        description="Configure the brand profile, widget tone and escalation rules for the demo workspace. Changes are local-only."
         brandId={brandId}
-        onBrandChange={(nextBrandId) => {
-          onBrandChange(nextBrandId);
-          const nextBrand = getBrand(nextBrandId);
-          setSettings({
-            brandName: nextBrand.name,
-            themeColor: nextBrand.themeColor,
-            supportPhone: "+91 90000 00000",
-            welcomeMessage: `Hi, welcome to ${nextBrand.name} support. How can I help?`,
-            quickActions: "Track my order, Return / Exchange, Shipping & Delivery, Talk to Support"
-          });
-        }}
+        onBrandChange={onBrandChange}
       />
 
-      <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-        <Card>
-          <div className="space-y-4">
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Brand name</span>
-              <input
-                value={settings.brandName}
-                onChange={(event) => update("brandName", event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
-              />
-            </label>
+      <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="space-y-5">
+          <Card>
+            <div className="mb-5 flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 text-white">
+                <Store className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-ink">Brand profile</p>
+                <p className="text-xs text-muted">Demo workspace identity</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Brand name</span>
+                <input
+                  value={settings.brandName}
+                  onChange={(event) => update("brandName", event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Industry</span>
+                <input
+                  value={settings.industry}
+                  onChange={(event) => update("industry", event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                />
+              </label>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="mb-5 flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 text-white">
+                <Palette className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-ink">Widget theme</p>
+                <p className="text-xs text-muted">Colors and greeting</p>
+              </div>
+            </div>
 
             <label className="block">
               <span className="text-sm font-semibold text-ink">Theme color</span>
@@ -75,16 +114,7 @@ export function Settings({ brandId, onBrandChange }) {
               </div>
             </label>
 
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Support phone</span>
-              <input
-                value={settings.supportPhone}
-                onChange={(event) => update("supportPhone", event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
-              />
-            </label>
-
-            <label className="block">
+            <label className="mt-4 block">
               <span className="text-sm font-semibold text-ink">Welcome message</span>
               <textarea
                 value={settings.welcomeMessage}
@@ -94,43 +124,121 @@ export function Settings({ brandId, onBrandChange }) {
               />
             </label>
 
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Quick actions</span>
-              <input
-                value={settings.quickActions}
-                onChange={(event) => update("quickActions", event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
-              />
-            </label>
-          </div>
-
-          <Button variant="secondary" className="mt-5" onClick={reset}>
-            Reset demo values
-          </Button>
-        </Card>
-
-        <Card>
-          <p className="text-sm font-semibold text-ink">Widget preview card</p>
-          <div className="mt-5 overflow-hidden rounded-[28px] border border-line bg-white shadow-card">
-            <div className="p-5 text-white" style={{ background: settings.themeColor }}>
-              <p className="text-sm font-semibold">{settings.brandName}</p>
-              <p className="mt-1 text-xs opacity-80">Online support</p>
-            </div>
-            <div className="p-5">
-              <p className="rounded-3xl bg-slate-100 p-4 text-sm leading-6 text-slate-700">
-                {settings.welcomeMessage}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {settings.quickActions.split(",").map((action) => (
-                  <span key={action.trim()} className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
-                    {action.trim()}
-                  </span>
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-ink">Quick actions</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {settings.quickActions.map((action, index) => (
+                  <input
+                    key={index}
+                    value={action}
+                    onChange={(event) => updateQuickAction(index, event.target.value)}
+                    className="rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                  />
                 ))}
               </div>
-              <p className="mt-5 text-xs text-muted">Support phone: {settings.supportPhone}</p>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  <Phone className="h-4 w-4" />
+                  Support phone
+                </span>
+                <input
+                  value={settings.supportPhone}
+                  onChange={(event) => update("supportPhone", event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Support email</span>
+                <input
+                  value={settings.supportEmail}
+                  onChange={(event) => update("supportEmail", event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  <Clock3 className="h-4 w-4" />
+                  Business hours
+                </span>
+                <input
+                  value={settings.businessHours}
+                  onChange={(event) => update("businessHours", event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                />
+              </label>
+            </div>
+
+            <Button variant="secondary" className="mt-5" onClick={reset}>
+              Reset demo values
+            </Button>
+          </Card>
+        </div>
+
+        <div className="space-y-5">
+          <Card>
+            <p className="text-sm font-semibold text-ink">Widget theme preview</p>
+            <div className="mt-5 overflow-hidden rounded-[28px] border border-line bg-white shadow-card">
+              <div className="p-5 text-white" style={{ background: settings.themeColor }}>
+                <p className="text-sm font-semibold">{settings.brandName}</p>
+                <p className="mt-1 text-xs opacity-80">Online support · {settings.industry}</p>
+              </div>
+              <div className="p-5">
+                <p className="rounded-3xl bg-slate-100 p-4 text-sm leading-6 text-slate-700">
+                  {settings.welcomeMessage}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {settings.quickActions.map((action) => (
+                    <span key={action} className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
+                      {action}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-amber-50 text-amber-700">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-ink">Escalation rules preview</p>
+                <p className="text-xs text-muted">Hard handoff triggers</p>
+              </div>
+            </div>
+            <div className="mt-5 space-y-3">
+              {settings.escalationRules.map((rule) => (
+                <div key={rule} className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3 text-sm font-medium text-amber-800">
+                  {rule}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <p className="text-sm font-semibold text-ink">Support contact preview</p>
+            <div className="mt-4 grid gap-3">
+              <div className="rounded-2xl border border-line bg-white/70 p-3">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Phone</p>
+                <p className="mt-1 text-sm font-semibold text-ink">{settings.supportPhone}</p>
+              </div>
+              <div className="rounded-2xl border border-line bg-white/70 p-3">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Email</p>
+                <p className="mt-1 text-sm font-semibold text-ink">{settings.supportEmail}</p>
+              </div>
+              <div className="rounded-2xl border border-line bg-white/70 p-3">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Hours</p>
+                <p className="mt-1 text-sm font-semibold text-ink">{settings.businessHours}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </>
   );

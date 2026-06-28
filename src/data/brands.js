@@ -1,7 +1,7 @@
 export const BRANDS = [
   {
     id: "vastra-demo",
-    name: "Teviq Vastra Demo",
+    name: "Vastra Demo",
     industry: "Fashion",
     themeColor: "#7c3aed"
   },
@@ -13,7 +13,7 @@ export const BRANDS = [
   },
   {
     id: "beauty-demo",
-    name: "GlowCare Beauty Demo",
+    name: "Beauty Demo",
     industry: "Beauty",
     themeColor: "#db2777"
   }
