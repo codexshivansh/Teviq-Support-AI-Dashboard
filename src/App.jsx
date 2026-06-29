@@ -55,8 +55,14 @@ export default function App() {
   const [brandId, setBrandId] = useState(getInitialBrandId);
   const Page = pages[activePage] || Home;
 
+  setAuthTokenGetter(auth.getAuthToken, {
+    isDemoSession: () => auth.isDemoSession
+  });
+
   useEffect(() => {
-    setAuthTokenGetter(auth.getAuthToken);
+    setAuthTokenGetter(auth.getAuthToken, {
+      isDemoSession: () => auth.isDemoSession
+    });
   }, [auth]);
 
   useEffect(() => {

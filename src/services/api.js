@@ -1,16 +1,23 @@
 export const API_BASE_URL = "https://teviq-support-ai-backend.onrender.com";
 
 let authTokenGetter = null;
+let demoSessionGetter = () => false;
 
-export function setAuthTokenGetter(getter) {
+export function setAuthTokenGetter(getter, options = {}) {
   authTokenGetter = getter;
+  demoSessionGetter = options.isDemoSession || (() => false);
 }
 
 async function request(path, options = {}) {
   const token = authTokenGetter ? await authTokenGetter() : null;
-  const authHeaders = token
-    ? { Authorization: `Bearer ${token}` }
-    : { "x-teviq-demo-auth": "true" };
+  const authHeaders = {};
+
+  if (token) {
+    authHeaders.Authorization = `Bearer ${token}`;
+  } else if (demoSessionGetter()) {
+    authHeaders["x-teviq-demo-auth"] = "true";
+  }
+
   const headers = options.body instanceof FormData
     ? {
         ...authHeaders,
