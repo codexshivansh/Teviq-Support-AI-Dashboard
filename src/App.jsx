@@ -10,6 +10,9 @@ import { Settings } from "./pages/Settings";
 import { Conversations } from "./pages/Conversations";
 import { WidgetInstall } from "./pages/WidgetInstall";
 import { useEffect, useState } from "react";
+import { LoginPage } from "./components/LoginPage";
+import { useTeviqAuth } from "./auth/AuthContext";
+import { setAuthTokenGetter } from "./services/api";
 
 const pages = {
   home: Home,
@@ -47,9 +50,14 @@ function getInitialBrandId() {
 }
 
 export default function App() {
+  const auth = useTeviqAuth();
   const [activePage, setActivePage] = useState(() => pageFromPath(window.location.pathname));
   const [brandId, setBrandId] = useState(getInitialBrandId);
   const Page = pages[activePage] || Home;
+
+  useEffect(() => {
+    setAuthTokenGetter(auth.getAuthToken);
+  }, [auth]);
 
   useEffect(() => {
     try {
@@ -71,6 +79,20 @@ export default function App() {
     if (window.location.pathname !== path) {
       window.history.pushState({}, "", path);
     }
+  }
+
+  if (!auth.isLoaded) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-500">
+        <div className="rounded-3xl border border-line bg-white px-5 py-4 text-sm font-semibold shadow-card">
+          Loading secure workspace...
+        </div>
+      </div>
+    );
+  }
+
+  if (!auth.isAuthenticated) {
+    return <LoginPage />;
   }
 
   return (

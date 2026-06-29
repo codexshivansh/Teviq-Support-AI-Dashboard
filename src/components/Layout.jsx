@@ -12,6 +12,7 @@ import {
   X
 } from "lucide-react";
 import { useState } from "react";
+import { useTeviqAuth } from "../auth/AuthContext";
 import { BRANDS, getBrand } from "../data/brands";
 
 const navItems = [
@@ -114,6 +115,57 @@ function Sidebar({ activePage, onNavigate, onClose, brandId, onBrandChange }) {
   );
 }
 
+function UserProfileControl() {
+  const { isDemoSession, signOut, user } = useTeviqAuth();
+
+  if (!isDemoSession && user) {
+    const displayName = user.fullName || user.primaryEmailAddress?.emailAddress || "Teviq user";
+    const imageUrl = user.imageUrl;
+
+    return (
+      <div className="flex items-center gap-3 rounded-3xl border border-line/80 bg-white/78 px-3 py-2 shadow-sm">
+        <div className="hidden text-right sm:block">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Signed in</p>
+          <p className="max-w-36 truncate text-sm font-semibold text-ink">{displayName}</p>
+        </div>
+        {imageUrl ? (
+          <img src={imageUrl} alt="" className="h-9 w-9 rounded-2xl object-cover" />
+        ) : (
+          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-slate-950 text-xs font-black text-white">
+            {displayName.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={signOut}
+          className="rounded-2xl border border-line bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+        >
+          Logout
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-3xl border border-teal-200/70 bg-teal-50/80 px-3 py-2 shadow-sm">
+      <span className="grid h-9 w-9 place-items-center rounded-2xl bg-teal-700 text-xs font-black text-white">
+        UD
+      </span>
+      <div className="hidden sm:block">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-teal-700">Demo session</p>
+        <p className="text-sm font-semibold text-ink">Urban Demo</p>
+      </div>
+      <button
+        type="button"
+        onClick={signOut}
+        className="rounded-2xl border border-teal-200 bg-white px-3 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-50"
+      >
+        Logout
+      </button>
+    </div>
+  );
+}
+
 export function Layout({ activePage, onNavigate, brandId, onBrandChange, children }) {
   const [open, setOpen] = useState(false);
   const brand = getBrand(brandId);
@@ -161,7 +213,7 @@ export function Layout({ activePage, onNavigate, brandId, onBrandChange, childre
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: brand.themeColor }} />
             <p className="text-sm font-semibold">{brand.name}</p>
           </div>
-          <span className="h-10 w-10" />
+          <UserProfileControl />
         </header>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <div className="mb-6 hidden items-center justify-between rounded-[28px] border border-white/70 bg-white/68 px-4 py-3 shadow-sm backdrop-blur-2xl lg:flex">
@@ -169,8 +221,11 @@ export function Layout({ activePage, onNavigate, brandId, onBrandChange, childre
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Admin portal</p>
               <p className="mt-1 text-sm font-semibold text-ink">Manage AI support for {brand.name}</p>
             </div>
-            <div className="w-72">
-              <WorkspaceSelector brandId={brandId} onBrandChange={onBrandChange} compact />
+            <div className="flex items-center gap-3">
+              <div className="w-72">
+                <WorkspaceSelector brandId={brandId} onBrandChange={onBrandChange} compact />
+              </div>
+              <UserProfileControl />
             </div>
           </div>
           {children}

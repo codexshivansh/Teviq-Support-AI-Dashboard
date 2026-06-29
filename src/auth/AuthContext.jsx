@@ -1,0 +1,119 @@
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { DEFAULT_BRAND_ID } from "../data/brands";
+import { CLERK_PUBLISHABLE_KEY, getStoredDemoSession, isDemoLoginEnabled, setStoredDemoSession } from "./authConfig";
+
+const AuthContext = createContext(null);
+
+function selectDemoWorkspace() {
+  try {
+    localStorage.setItem("teviq:selectedBrandId", DEFAULT_BRAND_ID);
+  } catch {
+    // Best-effort demo workspace selection.
+  }
+}
+
+function useDemoSessionState() {
+  const [isDemoSession, setIsDemoSession] = useState(getStoredDemoSession);
+
+  useEffect(() => {
+    if (isDemoSession && !isDemoLoginEnabled) {
+      setStoredDemoSession(false);
+      setIsDemoSession(false);
+    }
+  }, [isDemoSession]);
+
+  function startDemoSession() {
+    if (!isDemoLoginEnabled) return;
+    setStoredDemoSession(true);
+    setIsDemoSession(true);
+    selectDemoWorkspace();
+  }
+
+  function stopDemoSession() {
+    setStoredDemoSession(false);
+    setIsDemoSession(false);
+  }
+
+  return { isDemoSession, startDemoSession, stopDemoSession };
+}
+
+function DemoOnlyAuthProvider({ children }) {
+  const { isDemoSession, startDemoSession, stopDemoSession } = useDemoSessionState();
+
+  const value = useMemo(
+    () => ({
+      authError: "",
+      clerkConfigured: false,
+      isLoaded: true,
+      isAuthenticated: isDemoSession,
+      isDemoSession,
+      isDemoLoginEnabled,
+      user: null,
+      getAuthToken: async () => null,
+      startDemoSession,
+      signOut: stopDemoSession
+    }),
+    [isDemoSession]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function ClerkAuthProvider({ children }) {
+  const { getToken, isLoaded, isSignedIn, signOut: clerkSignOut } = useAuth();
+  const { user } = useUser();
+  const { isDemoSession, startDemoSession, stopDemoSession } = useDemoSessionState();
+
+  useEffect(() => {
+    if (isSignedIn && isDemoSession) {
+      stopDemoSession();
+    }
+  }, [isSignedIn, isDemoSession]);
+
+  const value = useMemo(
+    () => ({
+      authError: "",
+      clerkConfigured: true,
+      isLoaded,
+      isAuthenticated: Boolean(isSignedIn) || isDemoSession,
+      isDemoSession,
+      isDemoLoginEnabled,
+      user,
+      getAuthToken: async () => {
+        if (isDemoSession || !isSignedIn) return null;
+        return getToken();
+      },
+      startDemoSession,
+      signOut: async () => {
+        if (isDemoSession) {
+          stopDemoSession();
+          return;
+        }
+
+        await clerkSignOut();
+      }
+    }),
+    [clerkSignOut, getToken, isDemoSession, isLoaded, isSignedIn, user]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function AuthProvider({ children }) {
+  if (!CLERK_PUBLISHABLE_KEY) {
+    return <DemoOnlyAuthProvider>{children}</DemoOnlyAuthProvider>;
+  }
+
+  return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
+}
+
+export function useTeviqAuth() {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useTeviqAuth must be used inside AuthProvider");
+  }
+
+  return context;
+}
