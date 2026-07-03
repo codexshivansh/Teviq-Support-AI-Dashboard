@@ -12,13 +12,17 @@ export function LoadingState({ label = "Loading" }) {
 }
 
 export function ErrorState({ message = "Something went wrong." }) {
+  const isAuthError = /auth|session|sign in|unauthorized/i.test(message);
+
   return (
-    <div className="rounded-3xl border border-rose-200 bg-rose-50/80 p-5 text-sm text-rose-700">
+    <div className="rounded-3xl border border-rose-200 bg-rose-50/80 p-5 text-sm text-rose-700" role="alert">
       <div className="flex items-center gap-2 font-semibold">
         <AlertCircle className="h-4 w-4" />
-        Could not load
+        {isAuthError ? "Session needs attention" : "Could not load"}
       </div>
-      <p className="mt-2 text-rose-600">{message}</p>
+      <p className="mt-2 text-rose-600">
+        {isAuthError ? `${message} Refresh the page or sign in again if it continues.` : message}
+      </p>
     </div>
   );
 }

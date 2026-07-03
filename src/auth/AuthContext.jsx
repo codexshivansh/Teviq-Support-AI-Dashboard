@@ -1,5 +1,5 @@
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { DEFAULT_BRAND_ID } from "../data/brands";
 import { CLERK_PUBLISHABLE_KEY, getStoredDemoSession, isDemoLoginEnabled, setStoredDemoSession } from "./authConfig";
 
@@ -17,23 +17,23 @@ function useDemoSessionState() {
   const [isDemoSession, setIsDemoSession] = useState(getStoredDemoSession);
 
   useEffect(() => {
-    if (isDemoSession && !isDemoLoginEnabled) {
+    if (!isDemoLoginEnabled) {
       setStoredDemoSession(false);
-      setIsDemoSession(false);
+      if (isDemoSession) setIsDemoSession(false);
     }
   }, [isDemoSession]);
 
-  function startDemoSession() {
+  const startDemoSession = useCallback(() => {
     if (!isDemoLoginEnabled) return;
     setStoredDemoSession(true);
     setIsDemoSession(true);
     selectDemoWorkspace();
-  }
+  }, []);
 
-  function stopDemoSession() {
+  const stopDemoSession = useCallback(() => {
     setStoredDemoSession(false);
     setIsDemoSession(false);
-  }
+  }, []);
 
   return { isDemoSession, startDemoSession, stopDemoSession };
 }
@@ -54,7 +54,7 @@ function DemoOnlyAuthProvider({ children }) {
       startDemoSession,
       signOut: stopDemoSession
     }),
-    [isDemoSession]
+    [isDemoSession, startDemoSession, stopDemoSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -66,10 +66,11 @@ function ClerkAuthProvider({ children }) {
   const { isDemoSession, startDemoSession, stopDemoSession } = useDemoSessionState();
 
   useEffect(() => {
-    if (isSignedIn && isDemoSession) {
-      stopDemoSession();
+    if (isSignedIn) {
+      setStoredDemoSession(false);
+      if (isDemoSession) stopDemoSession();
     }
-  }, [isSignedIn, isDemoSession]);
+  }, [isSignedIn, isDemoSession, stopDemoSession]);
 
   const value = useMemo(
     () => ({
@@ -82,10 +83,13 @@ function ClerkAuthProvider({ children }) {
       user,
       getAuthToken: async () => {
         if (isDemoSession || !isSignedIn) return null;
-        return getToken();
+        const token = await getToken();
+        if (token) return token;
+        return getToken({ skipCache: true });
       },
       startDemoSession,
       signOut: async () => {
+        setStoredDemoSession(false);
         if (isDemoSession) {
           stopDemoSession();
           return;
@@ -94,7 +98,7 @@ function ClerkAuthProvider({ children }) {
         await clerkSignOut();
       }
     }),
-    [clerkSignOut, getToken, isDemoSession, isLoaded, isSignedIn, user]
+    [clerkSignOut, getToken, isDemoSession, isLoaded, isSignedIn, startDemoSession, stopDemoSession, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

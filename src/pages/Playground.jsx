@@ -68,14 +68,15 @@ export function Playground({ brandId, onBrandChange }) {
               <button
                 key={example}
                 onClick={() => submit(example)}
-                className="rounded-full border border-line bg-white/75 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-ink"
+                disabled={loading}
+                className="rounded-full border border-line bg-white/75 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-ink focus:outline-none focus:ring-4 focus:ring-slate-950/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {example}
               </button>
             ))}
           </div>
 
-          <Button className="mt-5 w-full" onClick={() => submit()} disabled={loading}>
+          <Button className="mt-5 w-full" onClick={() => submit()} disabled={loading || !message.trim()}>
             <Send className="h-4 w-4" />
             {loading ? "Thinking" : "Send to Support Brain"}
           </Button>

@@ -5,6 +5,12 @@ import { useTeviqAuth } from "../auth/AuthContext";
 
 export function LoginPage() {
   const { authError, clerkConfigured, isDemoLoginEnabled, startDemoSession } = useTeviqAuth();
+  const loginBenefits = [
+    "Brand-isolated workspaces",
+    "Google and email login",
+    "Persistent secure sessions",
+    isDemoLoginEnabled ? "Demo mode for presentations" : "Protected production dashboard"
+  ];
 
   return (
     <main className="min-h-screen overflow-hidden bg-slate-950 text-white">
@@ -28,7 +34,7 @@ export function LoginPage() {
           </p>
 
           <div className="mt-8 grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
-            {["Brand-isolated workspaces", "Google and email login", "Persistent secure sessions", "Demo mode for presentations"].map((item) => (
+            {loginBenefits.map((item) => (
               <div key={item} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/7 px-3 py-3">
                 <CheckCircle2 className="h-4 w-4 text-emerald-300" />
                 {item}

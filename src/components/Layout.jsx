@@ -56,6 +56,8 @@ function WorkspaceSelector({ brandId, onBrandChange, compact = false }) {
 }
 
 function Sidebar({ activePage, onNavigate, onClose, brandId, onBrandChange }) {
+  const { isDemoSession } = useTeviqAuth();
+
   return (
     <aside className="flex h-full w-72 flex-col border-r border-white/70 bg-white/72 px-4 py-5 shadow-soft backdrop-blur-2xl lg:w-76">
       <div className="flex items-center justify-between gap-3 px-2">
@@ -106,16 +108,20 @@ function Sidebar({ activePage, onNavigate, onClose, brandId, onBrandChange }) {
       </nav>
 
       <div className="mt-auto rounded-3xl border border-line/80 bg-white/75 p-4">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Demo mode</p>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+          {isDemoSession ? "Demo mode" : "Secure workspace"}
+        </p>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          No auth, billing or real Shopify OAuth. Built for client walkthroughs.
+          {isDemoSession
+            ? "Instant Urban Demo access for client walkthroughs."
+            : "Authenticated access for knowledge, connectors and workspace setup."}
         </p>
       </div>
     </aside>
   );
 }
 
-function UserProfileControl() {
+function UserProfileControl({ compact = false }) {
   const { isDemoSession, signOut, user } = useTeviqAuth();
 
   if (!isDemoSession && user) {
@@ -123,8 +129,8 @@ function UserProfileControl() {
     const imageUrl = user.imageUrl;
 
     return (
-      <div className="flex items-center gap-3 rounded-3xl border border-line/80 bg-white/78 px-3 py-2 shadow-sm">
-        <div className="hidden text-right sm:block">
+      <div className={`flex items-center gap-2 rounded-3xl border border-line/80 bg-white/78 px-2 py-2 shadow-sm ${compact ? "max-w-[150px]" : "px-3"}`}>
+        <div className={`${compact ? "hidden" : "hidden text-right sm:block"}`}>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Signed in</p>
           <p className="max-w-36 truncate text-sm font-semibold text-ink">{displayName}</p>
         </div>
@@ -138,29 +144,29 @@ function UserProfileControl() {
         <button
           type="button"
           onClick={signOut}
-          className="rounded-2xl border border-line bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+          className="rounded-2xl border border-line bg-white px-2.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
         >
-          Logout
+          Sign out
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-3xl border border-teal-200/70 bg-teal-50/80 px-3 py-2 shadow-sm">
+    <div className={`flex items-center gap-2 rounded-3xl border border-teal-200/70 bg-teal-50/80 px-2 py-2 shadow-sm ${compact ? "max-w-[150px]" : "px-3"}`}>
       <span className="grid h-9 w-9 place-items-center rounded-2xl bg-teal-700 text-xs font-black text-white">
         UD
       </span>
-      <div className="hidden sm:block">
+      <div className={compact ? "hidden" : "hidden sm:block"}>
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-teal-700">Demo session</p>
         <p className="text-sm font-semibold text-ink">Urban Demo</p>
       </div>
       <button
         type="button"
         onClick={signOut}
-        className="rounded-2xl border border-teal-200 bg-white px-3 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-50"
+        className="rounded-2xl border border-teal-200 bg-white px-2.5 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-50"
       >
-        Logout
+        Sign out
       </button>
     </div>
   );
@@ -209,11 +215,11 @@ export function Layout({ activePage, onNavigate, brandId, onBrandChange, childre
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-2">
+          <div className="min-w-0 flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: brand.themeColor }} />
-            <p className="text-sm font-semibold">{brand.name}</p>
+            <p className="max-w-[118px] truncate text-sm font-semibold sm:max-w-none">{brand.name}</p>
           </div>
-          <UserProfileControl />
+          <UserProfileControl compact />
         </header>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <div className="mb-6 hidden items-center justify-between rounded-[28px] border border-white/70 bg-white/68 px-4 py-3 shadow-sm backdrop-blur-2xl lg:flex">

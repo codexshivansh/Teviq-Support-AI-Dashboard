@@ -16,6 +16,7 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState("");
   const [error, setError] = useState("");
   const fileRef = useRef(null);
 
@@ -60,11 +61,14 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
 
   async function handleDelete(documentId) {
     setError("");
+    setDeletingId(documentId);
     try {
       await api.deleteKnowledgeDocument(brandId, documentId);
-      setDocuments((current) => current.filter((doc) => doc.documentId !== documentId));
+      await loadDocuments();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeletingId("");
     }
   }
 
@@ -136,9 +140,13 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
                     <td className="px-5 py-4 font-medium">{doc.chunkCount}</td>
                     <td className="px-5 py-4 text-muted">{formatDate(doc.uploadedAt)}</td>
                     <td className="px-5 py-4 text-right">
-                      <Button variant="danger" onClick={() => handleDelete(doc.documentId)}>
+                      <Button
+                        variant="danger"
+                        onClick={() => handleDelete(doc.documentId)}
+                        disabled={deletingId === doc.documentId}
+                      >
                         <Trash2 className="h-4 w-4" />
-                        Delete
+                        {deletingId === doc.documentId ? "Deleting" : "Delete"}
                       </Button>
                     </td>
                   </tr>

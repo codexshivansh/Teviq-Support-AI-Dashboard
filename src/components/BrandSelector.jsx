@@ -7,7 +7,8 @@ export function BrandSelector({ brandId, onChange }) {
       <select
         value={brandId}
         onChange={(event) => onChange(event.target.value)}
-        className="min-w-0 bg-transparent text-sm font-semibold text-ink outline-none"
+        aria-label="Select workspace brand"
+        className="min-w-0 rounded-xl bg-transparent text-sm font-semibold text-ink outline-none focus:ring-4 focus:ring-slate-950/10"
       >
         {BRANDS.map((brand) => (
           <option key={brand.id} value={brand.id}>

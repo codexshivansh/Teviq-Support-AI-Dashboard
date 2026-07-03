@@ -67,7 +67,7 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
         brandId={brandId}
         onBrandChange={onBrandChange}
         action={
-          <Button onClick={sync} disabled={syncing}>
+          <Button onClick={sync} disabled={syncing || loading}>
             <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
             {syncing ? "Syncing" : "Sync demo"}
           </Button>
