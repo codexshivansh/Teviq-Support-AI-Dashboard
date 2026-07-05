@@ -83,6 +83,54 @@ export const api = {
       method: "DELETE"
     });
   },
+  getKnowledgePolicies(brandId, search = "") {
+    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    return request(`/api/knowledge/${brandId}/policies${query}`, { requiresAuth: true });
+  },
+  createKnowledgePolicy(brandId, payload) {
+    return request(`/api/knowledge/${brandId}/policies`, {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+  updateKnowledgePolicy(brandId, policyId, payload) {
+    return request(`/api/knowledge/${brandId}/policies/${policyId}`, {
+      requiresAuth: true,
+      method: "PUT",
+      body: JSON.stringify(payload)
+    });
+  },
+  deleteKnowledgePolicy(brandId, policyId) {
+    return request(`/api/knowledge/${brandId}/policies/${policyId}`, {
+      requiresAuth: true,
+      method: "DELETE"
+    });
+  },
+  getKnowledgeFaqs(brandId, search = "") {
+    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    return request(`/api/knowledge/${brandId}/faqs${query}`, { requiresAuth: true });
+  },
+  createKnowledgeFaq(brandId, payload) {
+    return request(`/api/knowledge/${brandId}/faqs`, {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+  updateKnowledgeFaq(brandId, faqId, payload) {
+    return request(`/api/knowledge/${brandId}/faqs/${faqId}`, {
+      requiresAuth: true,
+      method: "PUT",
+      body: JSON.stringify(payload)
+    });
+  },
+  deleteKnowledgeFaq(brandId, faqId) {
+    return request(`/api/knowledge/${brandId}/faqs/${faqId}`, {
+      requiresAuth: true,
+      method: "DELETE"
+    });
+  },
   chat({ brandId, message, customerId }) {
     return request("/api/chat", {
       method: "POST",
