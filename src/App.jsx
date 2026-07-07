@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Layout } from "./components/Layout";
-import { DEFAULT_BRAND_ID } from "./data/brands";
+import { BRANDS, DEFAULT_BRAND_ID } from "./data/brands";
 import { Home } from "./pages/Home";
 import { KnowledgeBase } from "./pages/KnowledgeBase";
 import { Playground } from "./pages/Playground";
@@ -49,11 +49,59 @@ function getInitialBrandId() {
   }
 }
 
+function getBrandIdFromMetadata(metadata = {}) {
+  const candidates = [
+    metadata.brandId,
+    metadata.brand_id,
+    metadata.workspaceBrandId,
+    metadata.workspace_brand_id
+  ];
+
+  return candidates.find((candidate) => BRANDS.some((brand) => brand.id === candidate)) || "";
+}
+
+function BrandNotConfigured({ onSignOut }) {
+  return (
+    <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.08),_transparent_34%),#f8fafc] px-4 text-ink">
+      <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.24 }}
+        className="w-full max-w-lg rounded-[32px] border border-white/80 bg-white/82 p-8 text-center shadow-card backdrop-blur-2xl"
+      >
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-sm font-black text-white">
+          T
+        </div>
+        <p className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-muted">Workspace setup required</p>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink">Brand not configured yet.</h1>
+        <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted">
+          Contact Teviq support to complete setup.
+        </p>
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="mt-7 inline-flex items-center justify-center rounded-2xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-950/10"
+        >
+          Sign out
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function App() {
   const auth = useTeviqAuth();
   const [activePage, setActivePage] = useState(() => pageFromPath(window.location.pathname));
   const [brandId, setBrandId] = useState(getInitialBrandId);
   const Page = pages[activePage] || Home;
+  const user = auth.user;
+  const publicMetadata = user?.publicMetadata || {};
+  const isTeviqAdmin = !auth.isDemoSession && publicMetadata.role === "teviq_admin";
+  const assignedBrandId = getBrandIdFromMetadata(publicMetadata);
+  const hasAssignedBrand = Boolean(assignedBrandId);
+  const storedBrandIsValid = BRANDS.some((brand) => brand.id === brandId);
+  const activeBrandId = isTeviqAdmin ? (storedBrandIsValid ? brandId : DEFAULT_BRAND_ID) : assignedBrandId;
+  const handleBrandChange = isTeviqAdmin ? setBrandId : undefined;
 
   setAuthTokenGetter(auth.getAuthToken, {
     isDemoSession: () => auth.isDemoSession
@@ -66,12 +114,19 @@ export default function App() {
   }, [auth]);
 
   useEffect(() => {
+    if (!activeBrandId) return;
     try {
-      localStorage.setItem("teviq:selectedBrandId", brandId);
+      localStorage.setItem("teviq:selectedBrandId", activeBrandId);
     } catch {
       // Local storage can be unavailable in restricted browsers; ignore for demo mode.
     }
-  }, [brandId]);
+  }, [activeBrandId]);
+
+  useEffect(() => {
+    if (!auth.isAuthenticated) return;
+    if (brandId === activeBrandId) return;
+    setBrandId(activeBrandId);
+  }, [activeBrandId, auth.isAuthenticated, brandId]);
 
   useEffect(() => {
     const handlePopState = () => setActivePage(pageFromPath(window.location.pathname));
@@ -101,8 +156,12 @@ export default function App() {
     return <LoginPage />;
   }
 
+  if (!isTeviqAdmin && !hasAssignedBrand) {
+    return <BrandNotConfigured onSignOut={auth.signOut} />;
+  }
+
   return (
-    <Layout activePage={activePage} onNavigate={navigate} brandId={brandId} onBrandChange={setBrandId}>
+    <Layout activePage={activePage} onNavigate={navigate} brandId={activeBrandId} onBrandChange={handleBrandChange}>
       <AnimatePresence mode="wait">
         <motion.div
           key={activePage}
@@ -111,7 +170,7 @@ export default function App() {
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2 }}
         >
-          <Page brandId={brandId} onBrandChange={setBrandId} onNavigate={navigate} />
+          <Page brandId={activeBrandId} onBrandChange={handleBrandChange} onNavigate={navigate} />
         </motion.div>
       </AnimatePresence>
     </Layout>

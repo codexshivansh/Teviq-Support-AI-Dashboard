@@ -28,9 +28,10 @@ const navItems = [
 
 function WorkspaceSelector({ brandId, onBrandChange, compact = false }) {
   const brand = getBrand(brandId);
+  const canSwitchBrands = typeof onBrandChange === "function";
 
   return (
-    <label className={`block rounded-3xl border border-line/80 bg-white/78 shadow-sm ${compact ? "px-3 py-2" : "p-3"}`}>
+    <div className={`block rounded-3xl border border-line/80 bg-white/78 shadow-sm ${compact ? "px-3 py-2" : "p-3"}`}>
       <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted">Workspace</span>
       <div className="mt-2 flex items-center gap-3">
         <span
@@ -39,19 +40,27 @@ function WorkspaceSelector({ brandId, onBrandChange, compact = false }) {
         >
           {brand.name.slice(0, 2).toUpperCase()}
         </span>
-        <select
-          value={brandId}
-          onChange={(event) => onBrandChange(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-ink outline-none"
-        >
-          {BRANDS.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
+        {canSwitchBrands ? (
+          <select
+            value={brandId}
+            onChange={(event) => onBrandChange(event.target.value)}
+            aria-label="Select workspace brand"
+            className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-ink outline-none"
+          >
+            {BRANDS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-ink">{brand.name}</p>
+            <p className="mt-0.5 text-xs font-medium text-muted">{brand.industry}</p>
+          </div>
+        )}
       </div>
-    </label>
+    </div>
   );
 }
 
