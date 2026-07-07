@@ -51,6 +51,7 @@ function DemoOnlyAuthProvider({ children }) {
       isDemoLoginEnabled,
       user: null,
       getAuthToken: async () => null,
+      refreshUser: async () => {},
       startDemoSession,
       signOut: stopDemoSession
     }),
@@ -86,6 +87,11 @@ function ClerkAuthProvider({ children }) {
         const token = await getToken();
         if (token) return token;
         return getToken({ skipCache: true });
+      },
+      refreshUser: async () => {
+        if (user?.reload) {
+          await user.reload();
+        }
       },
       startDemoSession,
       signOut: async () => {

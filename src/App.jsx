@@ -11,8 +11,11 @@ import { Conversations } from "./pages/Conversations";
 import { WidgetInstall } from "./pages/WidgetInstall";
 import { useEffect, useState } from "react";
 import { LoginPage } from "./components/LoginPage";
+import { Onboarding } from "./pages/Onboarding";
 import { useTeviqAuth } from "./auth/AuthContext";
 import { setAuthTokenGetter } from "./services/api";
+
+const ONBOARDING_MINIMIZED_KEY = "teviq_onboarding_minimized";
 
 const pages = {
   home: Home,
@@ -57,7 +60,11 @@ function getBrandIdFromMetadata(metadata = {}) {
     metadata.workspace_brand_id
   ];
 
-  return candidates.find((candidate) => BRANDS.some((brand) => brand.id === candidate)) || "";
+  return candidates.find((candidate) => {
+    if (typeof candidate !== "string") return false;
+    if (BRANDS.some((brand) => brand.id === candidate)) return true;
+    return Boolean(metadata.brand_name) && /^[a-z0-9-]+$/.test(candidate);
+  }) || "";
 }
 
 function BrandNotConfigured({ onSignOut }) {
@@ -93,10 +100,20 @@ export default function App() {
   const auth = useTeviqAuth();
   const [activePage, setActivePage] = useState(() => pageFromPath(window.location.pathname));
   const [brandId, setBrandId] = useState(getInitialBrandId);
+  const [onboardingCompleteOverride, setOnboardingCompleteOverride] = useState(false);
+  const [onboardingMinimized, setOnboardingMinimized] = useState(() => {
+    try {
+      return localStorage.getItem(ONBOARDING_MINIMIZED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const Page = pages[activePage] || Home;
   const user = auth.user;
   const publicMetadata = user?.publicMetadata || {};
   const isTeviqAdmin = !auth.isDemoSession && publicMetadata.role === "teviq_admin";
+  const onboardingComplete = publicMetadata.onboarding_complete === true || onboardingCompleteOverride;
+  const shouldShowOnboarding = !auth.isDemoSession && !isTeviqAdmin && !onboardingComplete && !onboardingMinimized;
   const assignedBrandId = getBrandIdFromMetadata(publicMetadata);
   const hasAssignedBrand = Boolean(assignedBrandId);
   const storedBrandIsValid = BRANDS.some((brand) => brand.id === brandId);
@@ -135,6 +152,13 @@ export default function App() {
   }, []);
 
   function navigate(pageId) {
+    setOnboardingMinimized(() => {
+      try {
+        return localStorage.getItem(ONBOARDING_MINIMIZED_KEY) === "true";
+      } catch {
+        return false;
+      }
+    });
     setActivePage(pageId);
     const path = pagePaths[pageId] || "/";
     if (window.location.pathname !== path) {
@@ -154,6 +178,21 @@ export default function App() {
 
   if (!auth.isAuthenticated) {
     return <LoginPage />;
+  }
+
+  if (shouldShowOnboarding) {
+    return (
+      <Onboarding
+        metadata={publicMetadata}
+        refreshUser={auth.refreshUser}
+        onNavigate={navigate}
+        onComplete={() => {
+          setOnboardingCompleteOverride(true);
+          setOnboardingMinimized(false);
+          navigate("home");
+        }}
+      />
+    );
   }
 
   if (!isTeviqAdmin && !hasAssignedBrand) {

@@ -131,6 +131,19 @@ export const api = {
       method: "DELETE"
     });
   },
+  saveOnboardingBrandSetup(payload) {
+    return request("/api/onboarding/brand-setup", {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+  completeOnboarding() {
+    return request("/api/onboarding/complete", {
+      requiresAuth: true,
+      method: "POST"
+    });
+  },
   chat({ brandId, message, customerId }) {
     return request("/api/chat", {
       method: "POST",
