@@ -16,26 +16,7 @@ import { PageHeader } from "../components/PageHeader";
 import { Card, MetricCard } from "../components/Card";
 import { ErrorState, LoadingState } from "../components/States";
 import { api } from "../services/api";
-import { analyticsSeries } from "../data/analytics";
 import { getBrand } from "../data/brands";
-
-const brandMetrics = {
-  "vastra-demo": {
-    totalChats: 986,
-    avgResponse: "1.9s",
-    detail: "Fashion support workspace"
-  },
-  "urban-demo": {
-    totalChats: 1248,
-    avgResponse: "1.8s",
-    detail: "Electronics support workspace"
-  },
-  "beauty-demo": {
-    totalChats: 842,
-    avgResponse: "2.1s",
-    detail: "Beauty support workspace"
-  }
-};
 
 const setupCopy = {
   knowledge: {
@@ -126,6 +107,10 @@ function SetupStepCard({ step, index, completed, onOpen, brandColor }) {
   );
 }
 
+function EmptyMetricValue() {
+  return <span className="text-xl text-slate-500">No data yet</span>;
+}
+
 export function Home({ brandId, onBrandChange, onNavigate }) {
   const [knowledge, setKnowledge] = useState(null);
   const [shopify, setShopify] = useState(null);
@@ -157,22 +142,6 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
 
   useEffect(() => {
     setLocalSetup(getLocalSetupFlags(brandId));
-  }, [brandId]);
-
-  const totals = useMemo(() => {
-    const brandMetric = brandMetrics[brandId] || brandMetrics["urban-demo"];
-    const resolvedAverage = Math.round(
-      analyticsSeries.reduce((sum, item) => sum + item.resolved, 0) / analyticsSeries.length
-    );
-    const escalationTotal = analyticsSeries.reduce((sum, item) => sum + item.escalated, 0);
-
-    return {
-      totalChats: brandMetric.totalChats,
-      resolutionRate: `${resolvedAverage}%`,
-      escalations: escalationTotal,
-      avgResponse: brandMetric.avgResponse,
-      detail: brandMetric.detail
-    };
   }, [brandId]);
 
   const brand = getBrand(brandId);
@@ -220,12 +189,12 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
 
       {!loading && !error ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <MetricCard icon={MessageSquare} label="Total chats" value={totals.totalChats.toLocaleString()} detail={totals.detail} tone="blue" />
-          <MetricCard icon={Bot} label="Resolution rate" value={totals.resolutionRate} detail="Demo analytics preview" tone="green" />
-          <MetricCard icon={AlertTriangle} label="Escalations" value={totals.escalations} detail="Human handoffs this week" tone="amber" />
+          <MetricCard icon={MessageSquare} label="Total chats" value={<EmptyMetricValue />} detail="Install widget to start seeing conversations" tone="blue" />
+          <MetricCard icon={Bot} label="Resolution rate" value={<EmptyMetricValue />} detail="Install widget to start seeing conversations" tone="green" />
+          <MetricCard icon={AlertTriangle} label="Escalations" value={<EmptyMetricValue />} detail="Install widget to start seeing conversations" tone="amber" />
           <MetricCard icon={Database} label="Knowledge docs" value={knowledge?.stats?.documentCount || 0} detail={`${knowledge?.stats?.chunkCount || 0} indexed chunks`} />
           <MetricCard icon={ShoppingBag} label="Shopify status" value={shopify?.status === "connected" ? "Connected" : "Not ready"} detail={`${shopify?.productCount || 0} products synced`} tone="green" />
-          <MetricCard icon={Clock3} label="Avg response time" value={totals.avgResponse} detail="Widget response latency preview" />
+          <MetricCard icon={Clock3} label="Avg response time" value={<EmptyMetricValue />} detail="Install widget to start seeing conversations" />
         </div>
       ) : null}
 
