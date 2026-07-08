@@ -138,6 +138,18 @@ export const api = {
       body: JSON.stringify(payload)
     });
   },
+  getOnboardingShopifyStatus(brandId) {
+    return request(`/api/onboarding/shopify/status?brandId=${encodeURIComponent(brandId)}`, {
+      requiresAuth: true
+    });
+  },
+  testOnboardingShopifyConnection(payload) {
+    return request("/api/onboarding/shopify/test-connection", {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
   completeOnboarding() {
     return request("/api/onboarding/complete", {
       requiresAuth: true,

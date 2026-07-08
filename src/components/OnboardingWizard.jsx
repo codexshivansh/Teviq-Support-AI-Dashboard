@@ -182,19 +182,25 @@ function BrandSetupStep({ form, onChange, onSubmit, saving }) {
 }
 
 function ShopifyStep({ brandId, onNext }) {
-  const [status, setStatus] = useState(null);
+  const [connection, setConnection] = useState(null);
+  const [form, setForm] = useState({
+    storeUrl: "",
+    adminAccessToken: ""
+  });
   const [loading, setLoading] = useState(Boolean(brandId));
-  const [syncing, setSyncing] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [skipped, setSkipped] = useState(false);
   const [error, setError] = useState("");
+  const canContinue = Boolean(connection) || skipped;
 
   useEffect(() => {
     if (!brandId) return;
     let active = true;
     setLoading(true);
     setError("");
-    api.getShopifyStatus(brandId)
+    api.getOnboardingShopifyStatus(brandId)
       .then((data) => {
-        if (active) setStatus(data);
+        if (active) setConnection(data.connection || null);
       })
       .catch((err) => {
         if (active) setError(err.message);
@@ -208,26 +214,26 @@ function ShopifyStep({ brandId, onNext }) {
     };
   }, [brandId]);
 
-  async function connectDemo() {
+  async function testConnection(event) {
+    event.preventDefault();
     if (!brandId) return;
-    setSyncing(true);
+    setTesting(true);
+    setSkipped(false);
     setError("");
     try {
-      const data = await api.syncShopify(brandId);
-      setStatus({
-        status: data.ok ? "connected" : "not_configured",
-        productCount: data.imported?.products || 0,
-        orderCount: data.imported?.orders || 0,
-        lastSyncedAt: data.syncedAt
+      const data = await api.testOnboardingShopifyConnection({
+        brandId,
+        storeUrl: form.storeUrl,
+        adminAccessToken: form.adminAccessToken
       });
+      setConnection(data.connection || null);
+      setForm((current) => ({ ...current, adminAccessToken: "" }));
     } catch (err) {
       setError(err.message);
     } finally {
-      setSyncing(false);
+      setTesting(false);
     }
   }
-
-  const connected = status?.status === "connected";
 
   return (
     <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
@@ -239,37 +245,87 @@ function ShopifyStep({ brandId, onNext }) {
         <p className="mt-2 text-sm leading-6 text-muted">
           Connect commerce data so Teviq can answer order, product and fulfillment questions.
         </p>
+        <a
+          href="https://help.shopify.com/en/manual/apps/app-types/custom-apps"
+          target="_blank"
+          rel="noreferrer"
+          className="mt-5 inline-flex text-sm font-semibold text-slate-900 underline decoration-slate-300 underline-offset-4 transition hover:decoration-slate-900"
+        >
+          How to get this?
+        </a>
       </Card>
 
       <Card className="bg-white/65">
         {loading ? <LoadingState label="Checking Shopify status" /> : null}
         {!loading ? (
           <>
-            {connected ? (
+            {connection ? (
               <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-5">
                 <p className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
                   <CheckCircle2 className="h-5 w-5" />
                   Connected
                 </p>
                 <p className="mt-2 text-sm text-emerald-700">
-                  Product and order demo data is available for this workspace.
+                  {connection.shopName || connection.storeHost} is connected. Credentials are stored securely on the backend.
                 </p>
               </div>
-            ) : (
-              <div className="rounded-3xl border border-line bg-white/70 p-5">
-                <p className="text-sm font-semibold text-ink">Not connected yet</p>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Use the connector action below for demo workspaces. Custom brand connectors can be activated by Teviq during setup.
+            ) : null}
+            <form className="mt-5 rounded-3xl border border-line bg-white/70 p-5" onSubmit={testConnection}>
+              <p className="text-sm font-semibold text-ink">Connect your Shopify store</p>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Enter your Shopify store URL and Admin API Access Token. Teviq will test the connection and store credentials only on the backend.
+              </p>
+              <div className="mt-4 grid gap-4">
+                <Field label="Shopify store URL">
+                  <TextInput
+                    required={!connection && !skipped}
+                    value={form.storeUrl}
+                    onChange={(event) => {
+                      setSkipped(false);
+                      setForm((current) => ({ ...current, storeUrl: event.target.value }));
+                    }}
+                    placeholder="your-store.myshopify.com"
+                  />
+                </Field>
+                <Field label="Admin API Access Token">
+                  <TextInput
+                    required={!connection && !skipped}
+                    type="password"
+                    value={form.adminAccessToken}
+                    onChange={(event) => {
+                      setSkipped(false);
+                      setForm((current) => ({ ...current, adminAccessToken: event.target.value }));
+                    }}
+                    placeholder="shpat_..."
+                    autoComplete="off"
+                  />
+                </Field>
+              </div>
+              {error ? <p className="mt-3 text-sm text-amber-700">{error}</p> : null}
+              {skipped ? (
+                <p className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600">
+                  Shopify skipped for now. You can continue setup and connect it later.
                 </p>
-                {error ? <p className="mt-3 text-sm text-amber-700">{error}</p> : null}
-                <Button className="mt-4" onClick={connectDemo} disabled={syncing || !brandId}>
-                  {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
-                  {syncing ? "Connecting" : "Connect Shopify"}
+              ) : null}
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSkipped(true);
+                    setError("");
+                  }}
+                  className="text-left text-sm font-semibold text-slate-600 underline decoration-slate-300 underline-offset-4 transition hover:text-slate-950 hover:decoration-slate-950"
+                >
+                  Skip for now
+                </button>
+                <Button type="submit" disabled={testing || !brandId}>
+                  {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
+                  {testing ? "Testing" : "Test Connection"}
                 </Button>
               </div>
-            )}
+            </form>
             <div className="mt-5 flex justify-end">
-              <Button onClick={onNext}>
+              <Button onClick={onNext} disabled={!canContinue}>
                 Continue
                 <ArrowRight className="h-4 w-4" />
               </Button>
