@@ -177,5 +177,8 @@ export const api = {
   },
   getShopifyProducts(brandId) {
     return request(`/api/integrations/shopify/${brandId}/products`, { requiresAuth: true });
+  },
+  getAnalytics(brandId, days = 30) {
+    return request(`/api/analytics/${brandId}?days=${days}`, { requiresAuth: true });
   }
 };
