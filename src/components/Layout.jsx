@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useTeviqAuth } from "../auth/AuthContext";
-import { BRANDS, getBrand } from "../data/brands";
+import { getBrand } from "../data/brands";
+import { useBrands } from "../hooks/useBrands";
 
 const navItems = [
   { id: "home", label: "Overview", icon: Home },
@@ -27,7 +28,8 @@ const navItems = [
 ];
 
 function WorkspaceSelector({ brandId, onBrandChange, compact = false }) {
-  const brand = getBrand(brandId);
+  const { brands, loading, error } = useBrands();
+  const brand = getBrand(brandId, brands);
   const canSwitchBrands = typeof onBrandChange === "function";
 
   return (
@@ -41,18 +43,24 @@ function WorkspaceSelector({ brandId, onBrandChange, compact = false }) {
           {brand.name.slice(0, 2).toUpperCase()}
         </span>
         {canSwitchBrands ? (
-          <select
-            value={brandId}
-            onChange={(event) => onBrandChange(event.target.value)}
-            aria-label="Select workspace brand"
-            className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-ink outline-none"
-          >
-            {BRANDS.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
+          loading ? (
+            <span className="min-w-0 flex-1 text-sm font-medium text-muted">Loading workspaces...</span>
+          ) : error ? (
+            <span className="min-w-0 flex-1 text-xs font-medium text-rose-600">Could not load workspaces</span>
+          ) : (
+            <select
+              value={brandId}
+              onChange={(event) => onBrandChange(event.target.value)}
+              aria-label="Select workspace brand"
+              className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-ink outline-none"
+            >
+              {brands.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          )
         ) : (
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-ink">{brand.name}</p>

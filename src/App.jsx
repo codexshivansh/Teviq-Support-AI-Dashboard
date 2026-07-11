@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Layout } from "./components/Layout";
-import { BRANDS, DEFAULT_BRAND_ID } from "./data/brands";
+import { DEFAULT_BRAND_ID } from "./data/brands";
+import { useBrands } from "./hooks/useBrands";
 import { Home } from "./pages/Home";
 import { KnowledgeBase } from "./pages/KnowledgeBase";
 import { Playground } from "./pages/Playground";
@@ -52,7 +53,7 @@ function getInitialBrandId() {
   }
 }
 
-function getBrandIdFromMetadata(metadata = {}) {
+function getBrandIdFromMetadata(metadata = {}, brands = []) {
   const candidates = [
     metadata.brandId,
     metadata.brand_id,
@@ -62,7 +63,7 @@ function getBrandIdFromMetadata(metadata = {}) {
 
   return candidates.find((candidate) => {
     if (typeof candidate !== "string") return false;
-    if (BRANDS.some((brand) => brand.id === candidate)) return true;
+    if (brands.some((brand) => brand.id === candidate)) return true;
     return Boolean(metadata.brand_name) && /^[a-z0-9-]+$/.test(candidate);
   }) || "";
 }
@@ -98,6 +99,7 @@ function BrandNotConfigured({ onSignOut }) {
 
 export default function App() {
   const auth = useTeviqAuth();
+  const { brands, loading: brandsLoading } = useBrands(auth.isAuthenticated);
   const [activePage, setActivePage] = useState(() => pageFromPath(window.location.pathname));
   const [brandId, setBrandId] = useState(getInitialBrandId);
   const [onboardingCompleteOverride, setOnboardingCompleteOverride] = useState(false);
@@ -114,9 +116,9 @@ export default function App() {
   const isTeviqAdmin = !auth.isDemoSession && publicMetadata.role === "teviq_admin";
   const onboardingComplete = publicMetadata.onboarding_complete === true || onboardingCompleteOverride;
   const shouldShowOnboarding = !auth.isDemoSession && !isTeviqAdmin && !onboardingComplete && !onboardingMinimized;
-  const assignedBrandId = getBrandIdFromMetadata(publicMetadata);
+  const assignedBrandId = getBrandIdFromMetadata(publicMetadata, brands);
   const hasAssignedBrand = Boolean(assignedBrandId);
-  const storedBrandIsValid = BRANDS.some((brand) => brand.id === brandId);
+  const storedBrandIsValid = brandsLoading ? true : brands.some((brand) => brand.id === brandId);
   const activeBrandId = isTeviqAdmin ? (storedBrandIsValid ? brandId : DEFAULT_BRAND_ID) : assignedBrandId;
   const handleBrandChange = isTeviqAdmin ? setBrandId : undefined;
 

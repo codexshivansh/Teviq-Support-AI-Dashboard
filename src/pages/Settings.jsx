@@ -3,10 +3,12 @@ import { AlertTriangle, Clock3, Palette, Phone, Store } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
+import { LoadingState, ErrorState } from "../components/States";
 import { getBrand } from "../data/brands";
+import { useBrands } from "../hooks/useBrands";
 
-function buildDefaults(brandId) {
-  const brand = getBrand(brandId);
+function buildDefaults(brandId, brands) {
+  const brand = getBrand(brandId, brands);
   return {
     brandName: brand.name,
     industry: brand.industry,
@@ -21,12 +23,13 @@ function buildDefaults(brandId) {
 }
 
 export function Settings({ brandId, onBrandChange }) {
-  const defaults = useMemo(() => buildDefaults(brandId), [brandId]);
+  const { brands, loading: brandsLoading, error: brandsError } = useBrands();
+  const defaults = useMemo(() => buildDefaults(brandId, brands), [brandId, brands]);
   const [settings, setSettings] = useState(defaults);
 
   useEffect(() => {
-    setSettings(buildDefaults(brandId));
-  }, [brandId]);
+    setSettings(buildDefaults(brandId, brands));
+  }, [brandId, brands]);
 
   function update(field, value) {
     setSettings((current) => ({ ...current, [field]: value }));
@@ -53,6 +56,10 @@ export function Settings({ brandId, onBrandChange }) {
         onBrandChange={onBrandChange}
       />
 
+      {brandsLoading ? <LoadingState label="Loading brand" /> : null}
+      {brandsError && !brandsLoading ? <ErrorState message={brandsError} /> : null}
+
+      {!brandsLoading && !brandsError ? (
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-5">
           <Card>
@@ -240,6 +247,7 @@ export function Settings({ brandId, onBrandChange }) {
           </Card>
         </div>
       </div>
+      ) : null}
     </>
   );
 }

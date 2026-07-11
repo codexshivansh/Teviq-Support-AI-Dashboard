@@ -1,24 +1,3 @@
-export const BRANDS = [
-  {
-    id: "vastra-demo",
-    name: "Vastra Demo",
-    industry: "Fashion",
-    themeColor: "#7c3aed"
-  },
-  {
-    id: "urban-demo",
-    name: "Urban Gadgets Demo",
-    industry: "Electronics",
-    themeColor: "#0f766e"
-  },
-  {
-    id: "beauty-demo",
-    name: "Beauty Demo",
-    industry: "Beauty",
-    themeColor: "#db2777"
-  }
-];
-
 export const DEFAULT_BRAND_ID = "urban-demo";
 
 function titleFromBrandId(brandId) {
@@ -29,8 +8,10 @@ function titleFromBrandId(brandId) {
     .join(" ");
 }
 
-export function getBrand(brandId) {
-  const knownBrand = BRANDS.find((brand) => brand.id === brandId);
+// brands should come from useBrands() (GET /api/brands). Falls back to a
+// computed placeholder while that list is loading or if brandId isn't in it.
+export function getBrand(brandId, brands = []) {
+  const knownBrand = brands.find((brand) => brand.id === brandId);
   if (knownBrand) return knownBrand;
 
   return {
