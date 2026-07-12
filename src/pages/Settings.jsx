@@ -141,7 +141,7 @@ export function Settings({ brandId, onBrandChange }) {
                   value={settings.brandName}
                   disabled
                   title="Brand name is set during onboarding and can't be changed here."
-                  className="mt-2 w-full cursor-not-allowed rounded-2xl border border-line bg-slate-50 px-4 py-3 text-sm text-muted outline-none"
+                  className="mt-2 w-full cursor-not-allowed rounded-2xl border border-line bg-slate-50 px-4 py-3 text-sm text-muted outline-none dark:bg-white/5"
                 />
               </label>
               <label className="block">
@@ -150,7 +150,7 @@ export function Settings({ brandId, onBrandChange }) {
                   value={settings.industry}
                   disabled
                   title="Industry is set during onboarding and can't be changed here."
-                  className="mt-2 w-full cursor-not-allowed rounded-2xl border border-line bg-slate-50 px-4 py-3 text-sm text-muted outline-none"
+                  className="mt-2 w-full cursor-not-allowed rounded-2xl border border-line bg-slate-50 px-4 py-3 text-sm text-muted outline-none dark:bg-white/5"
                 />
               </label>
             </div>
@@ -174,12 +174,12 @@ export function Settings({ brandId, onBrandChange }) {
                   type="color"
                   value={settings.themeColor}
                   onChange={(event) => update("themeColor", event.target.value)}
-                  className="h-12 w-16 rounded-2xl border border-line bg-white p-1"
+                  className="h-12 w-16 rounded-2xl border border-line bg-white p-1 dark:bg-white/10"
                 />
                 <input
                   value={settings.themeColor}
                   onChange={(event) => update("themeColor", event.target.value)}
-                  className="min-w-0 flex-1 rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                  className="min-w-0 flex-1 rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                 />
               </div>
             </label>
@@ -190,7 +190,7 @@ export function Settings({ brandId, onBrandChange }) {
                 value={settings.welcomeMessage}
                 onChange={(event) => update("welcomeMessage", event.target.value)}
                 rows={3}
-                className="mt-2 w-full resize-none rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                className="mt-2 w-full resize-none rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
               />
             </label>
 
@@ -202,7 +202,7 @@ export function Settings({ brandId, onBrandChange }) {
                     key={index}
                     value={action}
                     onChange={(event) => updateQuickAction(index, event.target.value)}
-                    className="rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                    className="rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                   />
                 ))}
               </div>
@@ -219,7 +219,7 @@ export function Settings({ brandId, onBrandChange }) {
                 <input
                   value={settings.supportPhone}
                   onChange={(event) => update("supportPhone", event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                 />
               </label>
               <label className="block">
@@ -227,7 +227,7 @@ export function Settings({ brandId, onBrandChange }) {
                 <input
                   value={settings.supportEmail}
                   onChange={(event) => update("supportEmail", event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                 />
               </label>
               <label className="block sm:col-span-2">
@@ -238,7 +238,7 @@ export function Settings({ brandId, onBrandChange }) {
                 <input
                   value={settings.businessHours}
                   onChange={(event) => update("businessHours", event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                 />
               </label>
             </div>
@@ -301,15 +301,15 @@ export function Settings({ brandId, onBrandChange }) {
           <Card>
             <p className="text-sm font-semibold text-ink">Support contact preview</p>
             <div className="mt-4 grid gap-3">
-              <div className="rounded-2xl border border-line bg-white/70 p-3">
+              <div className="rounded-2xl border border-line bg-white/70 p-3 dark:bg-white/5">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Phone</p>
                 <p className="mt-1 text-sm font-semibold text-ink">{settings.supportPhone}</p>
               </div>
-              <div className="rounded-2xl border border-line bg-white/70 p-3">
+              <div className="rounded-2xl border border-line bg-white/70 p-3 dark:bg-white/5">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Email</p>
                 <p className="mt-1 text-sm font-semibold text-ink">{settings.supportEmail}</p>
               </div>
-              <div className="rounded-2xl border border-line bg-white/70 p-3">
+              <div className="rounded-2xl border border-line bg-white/70 p-3 dark:bg-white/5">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Hours</p>
                 <p className="mt-1 text-sm font-semibold text-ink">{settings.businessHours}</p>
               </div>

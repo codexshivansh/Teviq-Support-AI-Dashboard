@@ -94,7 +94,7 @@ function Sidebar({ activePage, onNavigate, onClose, brandId, onBrandChange }) {
           </div>
         </div>
         <button
-          className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-white lg:hidden"
+          className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-white lg:hidden dark:bg-white/5"
           onClick={onClose}
           aria-label="Close navigation"
         >

@@ -90,7 +90,7 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
             <p className="text-sm font-semibold text-ink">Categories</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {(status?.categories || []).map((category) => (
-                <span key={category} className="rounded-full border border-line bg-white/75 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                <span key={category} className="rounded-full border border-line bg-white/75 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300">
                   {category}
                 </span>
               ))}
@@ -101,7 +101,7 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
             {products.length ? (
               <div className="overflow-x-auto teviq-scrollbar">
                 <table className="w-full min-w-[760px] text-left text-sm">
-                  <thead className="border-b border-line bg-slate-50/80 text-xs uppercase tracking-[0.14em] text-muted">
+                  <thead className="border-b border-line bg-slate-50/80 text-xs uppercase tracking-[0.14em] text-muted dark:bg-white/5">
                     <tr>
                       <th className="px-5 py-4">Product</th>
                       <th className="px-5 py-4">Category</th>
@@ -111,7 +111,7 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
                   </thead>
                   <tbody className="divide-y divide-line/70">
                     {products.map((product) => (
-                      <tr key={product.id} className="bg-white/45">
+                      <tr key={product.id} className="bg-white/45 dark:bg-transparent">
                         <td className="px-5 py-4">
                           <p className="font-semibold text-ink">{product.title}</p>
                           <p className="text-xs text-muted">{product.handle}</p>
@@ -119,7 +119,7 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
                         <td className="px-5 py-4 text-muted">{product.category}</td>
                         <td className="px-5 py-4 font-medium">{product.currency} {product.price}</td>
                         <td className="px-5 py-4">
-                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
                             {product.available ? "Available" : "Unavailable"}
                           </span>
                         </td>

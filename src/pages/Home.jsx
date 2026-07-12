@@ -78,7 +78,7 @@ function SetupStepCard({ step, index, completed, onOpen, brandColor }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, delay: index * 0.04 }}
-      className="group flex h-full flex-col rounded-3xl border border-line/80 bg-white/72 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-card focus:outline-none focus:ring-2 focus:ring-slate-950/10"
+      className="group flex h-full flex-col rounded-3xl border border-line/80 bg-white/72 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-card focus:outline-none focus:ring-2 focus:ring-slate-950/10 dark:bg-white/5 dark:hover:bg-white/10"
     >
       <div className="flex items-start justify-between gap-3">
         <div

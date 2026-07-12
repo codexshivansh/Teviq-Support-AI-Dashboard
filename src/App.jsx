@@ -70,7 +70,19 @@ function getBrandIdFromMetadata(metadata = {}, brands = []) {
 
 function BrandNotConfigured({ onSignOut }) {
   return (
-    <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.08),_transparent_34%),#f8fafc] px-4 text-ink">
+    // Fixed light page background regardless of dashboard theme, so the
+    // --color-* vars are pinned to light values here too (see the same
+    // pattern/reasoning in OnboardingWizard.jsx's StepShell).
+    <div
+      className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.08),_transparent_34%),#f8fafc] px-4 text-ink"
+      style={{
+        "--color-ink": "15 23 42",
+        "--color-muted": "100 116 139",
+        "--color-line": "226 232 240",
+        "--color-panel": "rgba(255, 255, 255, 0.78)",
+        colorScheme: "light"
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 10, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -170,8 +182,8 @@ export default function App() {
 
   if (!auth.isLoaded) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-500">
-        <div className="rounded-3xl border border-line bg-white px-5 py-4 text-sm font-semibold shadow-card">
+      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+        <div className="rounded-3xl border border-line bg-white px-5 py-4 text-sm font-semibold shadow-card dark:bg-slate-900 dark:text-slate-200">
           Loading secure workspace...
         </div>
       </div>

@@ -8,7 +8,11 @@
   --color-line: 226 232 240;
   --color-panel: rgba(255, 255, 255, 0.78);
 
-  color: #0f172a;
+  /* Uses the CSS var (not a literal hex) so any element relying on inherited
+     color instead of an explicit Tailwind text-* class — native <select>/
+     <input> text especially — still flips correctly under .dark, instead of
+     staying stuck at the light-mode navy forever. */
+  color: rgb(var(--color-ink));
   background: #f8fafc;
   font-synthesis: none;
   text-rendering: geometricPrecision;
@@ -21,6 +25,14 @@
   --color-muted: 148 163 184;
   --color-line: 51 65 85;
   --color-panel: rgba(30, 41, 59, 0.78);
+}
+
+select option {
+  /* <option> text inside the dropdown popup ignores the parent's inherited
+     color in most browsers and needs its own — otherwise it renders using
+     the OS-native palette regardless of app theme. */
+  color: #0f172a;
+  background: #ffffff;
 }
 
 body {

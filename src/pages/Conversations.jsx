@@ -19,11 +19,11 @@ function formatTime(value) {
 
 function StatusPill({ status }) {
   const styles = {
-    open: "bg-blue-50 text-blue-700",
-    escalated: "bg-rose-50 text-rose-700"
+    open: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
+    escalated: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300"
   };
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${styles[status] || "bg-slate-100 text-slate-600"}`}>
+    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${styles[status] || "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300"}`}>
       {status}
     </span>
   );
@@ -87,19 +87,19 @@ export function Conversations({ brandId, onBrandChange }) {
 
       <Card className="mb-5">
         <div className="grid gap-3 lg:grid-cols-[1fr_180px_220px]">
-          <label className="flex items-center gap-3 rounded-2xl border border-line bg-white/75 px-3 py-2.5">
+          <label className="flex items-center gap-3 rounded-2xl border border-line bg-white/75 px-3 py-2.5 dark:bg-white/5">
             <Search className="h-4 w-4 text-slate-400" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search customer, message or intent"
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+              className="min-w-0 flex-1 bg-transparent text-sm text-ink outline-none"
             />
           </label>
-          <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-2xl border border-line bg-white/75 px-3 py-2.5 text-sm font-semibold outline-none">
+          <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-2xl border border-line bg-white/75 px-3 py-2.5 text-sm font-semibold text-ink outline-none dark:bg-white/5">
             {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
-          <select value={intent} onChange={(event) => setIntent(event.target.value)} className="rounded-2xl border border-line bg-white/75 px-3 py-2.5 text-sm font-semibold outline-none">
+          <select value={intent} onChange={(event) => setIntent(event.target.value)} className="rounded-2xl border border-line bg-white/75 px-3 py-2.5 text-sm font-semibold text-ink outline-none dark:bg-white/5">
             {intents.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </div>
@@ -117,8 +117,8 @@ export function Conversations({ brandId, onBrandChange }) {
                   <button
                     key={conversation.id}
                     onClick={() => setSelectedId(conversation.id)}
-                    className={`block w-full p-4 text-left transition hover:bg-white/75 ${
-                      selected?.id === conversation.id ? "bg-white/85" : "bg-white/35"
+                    className={`block w-full p-4 text-left transition hover:bg-white/75 dark:hover:bg-white/5 ${
+                      selected?.id === conversation.id ? "bg-white/85 dark:bg-white/10" : "bg-white/35 dark:bg-transparent"
                     }`}
                   >
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -126,10 +126,10 @@ export function Conversations({ brandId, onBrandChange }) {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-ink">{conversation.customer}</p>
                         </div>
-                        <p className="mt-1 truncate text-sm text-slate-600">{conversation.lastMessage}</p>
+                        <p className="mt-1 truncate text-sm text-slate-600 dark:text-slate-400">{conversation.lastMessage}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
                           {conversation.intent}
                         </span>
                         <StatusPill status={conversation.status} />
@@ -165,7 +165,7 @@ export function Conversations({ brandId, onBrandChange }) {
                     <p className="mt-1 text-xs text-muted">{selected.channel}</p>
                   </div>
                   <button
-                    className="grid h-9 w-9 place-items-center rounded-2xl border border-line bg-white text-slate-500"
+                    className="grid h-9 w-9 place-items-center rounded-2xl border border-line bg-white text-slate-500 dark:bg-white/5 dark:text-slate-300"
                     onClick={() => setSelectedId(null)}
                     aria-label="Clear selected conversation"
                   >
@@ -175,7 +175,7 @@ export function Conversations({ brandId, onBrandChange }) {
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <StatusPill status={selected.status} />
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{selected.intent}</span>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">{selected.intent}</span>
                 </div>
 
                 <div className="mt-6 space-y-3">
@@ -184,8 +184,8 @@ export function Conversations({ brandId, onBrandChange }) {
                       key={`${message.role}-${index}`}
                       className={`rounded-3xl p-4 text-sm leading-6 ${
                         message.role === "customer"
-                          ? "ml-8 bg-slate-950 text-white"
-                          : "mr-8 border border-line bg-white/75 text-slate-700"
+                          ? "ml-8 bg-slate-950 text-white dark:bg-slate-800"
+                          : "mr-8 border border-line bg-white/75 text-slate-700 dark:bg-white/5 dark:text-slate-300"
                       }`}
                     >
                       {message.text}

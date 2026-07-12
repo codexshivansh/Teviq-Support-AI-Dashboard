@@ -13,11 +13,11 @@ function StepList({ title, steps }) {
       <p className="text-sm font-semibold text-ink">{title}</p>
       <div className="mt-4 space-y-3">
         {steps.map((step, index) => (
-          <div key={step} className="flex gap-3 rounded-2xl border border-line bg-white/65 p-3">
-            <span className="grid h-7 w-7 flex-none place-items-center rounded-xl bg-slate-950 text-xs font-bold text-white">
+          <div key={step} className="flex gap-3 rounded-2xl border border-line bg-white/65 p-3 dark:bg-white/5">
+            <span className="grid h-7 w-7 flex-none place-items-center rounded-xl bg-slate-950 text-xs font-bold text-white dark:bg-white dark:text-slate-950">
               {index + 1}
             </span>
-            <p className="text-sm leading-6 text-slate-600">{step}</p>
+            <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{step}</p>
           </div>
         ))}
       </div>
@@ -88,7 +88,7 @@ export function WidgetInstall({ brandId, onBrandChange }) {
               <p className="text-sm font-semibold text-ink">Production embed script</p>
               <p className="mt-1 text-sm text-muted">Selected brand ID: <span className="font-semibold text-ink">{brandId}</span></p>
             </div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
               <CheckCircle2 className="h-4 w-4" />
               Widget status: Ready
             </span>
@@ -125,7 +125,7 @@ export function WidgetInstall({ brandId, onBrandChange }) {
               ["Backend API", API_URL],
               ["Brand ID", brandId]
             ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl border border-line bg-white/70 p-3">
+              <div key={label} className="rounded-2xl border border-line bg-white/70 p-3 dark:bg-white/5">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">{label}</p>
                 <p className="mt-1 break-all text-sm font-semibold text-ink">{value}</p>
               </div>
@@ -168,9 +168,9 @@ export function WidgetInstall({ brandId, onBrandChange }) {
             "Human support flow asks for contact details.",
             "No console errors from blocked scripts."
           ].map((item) => (
-            <div key={item} className="flex items-center gap-3 rounded-2xl border border-line bg-white/65 p-3">
-              <Clipboard className="h-4 w-4 text-slate-500" />
-              <p className="text-sm text-slate-600">{item}</p>
+            <div key={item} className="flex items-center gap-3 rounded-2xl border border-line bg-white/65 p-3 dark:bg-white/5">
+              <Clipboard className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+              <p className="text-sm text-slate-600 dark:text-slate-300">{item}</p>
             </div>
           ))}
         </div>

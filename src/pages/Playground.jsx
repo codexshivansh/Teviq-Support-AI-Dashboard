@@ -59,7 +59,7 @@ export function Playground({ brandId, onBrandChange }) {
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             rows={7}
-            className="mt-3 w-full resize-none rounded-3xl border border-line bg-white/80 p-4 text-sm leading-6 outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+            className="mt-3 w-full resize-none rounded-3xl border border-line bg-white/80 p-4 text-sm leading-6 text-ink outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
             placeholder="Ask about orders, returns, shipping, products..."
           />
 
@@ -69,7 +69,7 @@ export function Playground({ brandId, onBrandChange }) {
                 key={example}
                 onClick={() => submit(example)}
                 disabled={loading}
-                className="rounded-full border border-line bg-white/75 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-ink focus:outline-none focus:ring-4 focus:ring-slate-950/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-line bg-white/75 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-ink focus:outline-none focus:ring-4 focus:ring-slate-950/10 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-ink"
               >
                 {example}
               </button>
@@ -96,7 +96,7 @@ export function Playground({ brandId, onBrandChange }) {
           {error ? <div className="mt-5"><ErrorState message={error} /></div> : null}
 
           {!response && !error ? (
-            <div className="mt-8 rounded-3xl border border-dashed border-line bg-white/55 p-8 text-center">
+            <div className="mt-8 rounded-3xl border border-dashed border-line bg-white/55 p-8 text-center dark:bg-white/5">
               <UserRound className="mx-auto h-8 w-8 text-slate-400" />
               <p className="mt-4 text-sm font-semibold text-ink">No response yet</p>
               <p className="mt-1 text-sm text-muted">Send a test message to preview the brand support answer.</p>
@@ -117,7 +117,7 @@ export function Playground({ brandId, onBrandChange }) {
                   ["Escalated", response.escalated ? "Yes" : "No"],
                   ["Warnings", response.warnings?.length ? response.warnings.join(", ") : "None"]
                 ].map(([label, value]) => (
-                  <div key={label} className="rounded-2xl border border-line bg-white/70 p-3">
+                  <div key={label} className="rounded-2xl border border-line bg-white/70 p-3 dark:bg-white/5">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">{label}</p>
                     <p className="mt-1 text-sm font-semibold text-ink">{value || "Not available"}</p>
                   </div>

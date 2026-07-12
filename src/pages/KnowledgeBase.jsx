@@ -64,7 +64,7 @@ function FieldLabel({ children }) {
 function TextInput(props) {
   return (
     <input
-      className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-950/5"
+      className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-950/5 dark:bg-white/5"
       {...props}
     />
   );
@@ -73,7 +73,7 @@ function TextInput(props) {
 function TextArea(props) {
   return (
     <textarea
-      className="mt-2 min-h-36 w-full resize-y rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm leading-6 text-ink outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-950/5"
+      className="mt-2 min-h-36 w-full resize-y rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm leading-6 text-ink outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-950/5 dark:bg-white/5"
       {...props}
     />
   );
@@ -82,7 +82,7 @@ function TextArea(props) {
 function SelectInput(props) {
   return (
     <select
-      className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-950/5"
+      className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm font-medium text-ink outline-none transition focus:border-slate-300 focus:ring-4 focus:ring-slate-950/5 dark:bg-white/5"
       {...props}
     />
   );
@@ -96,7 +96,7 @@ function SearchBox({ value, onChange, placeholder }) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-line bg-white/75 py-2.5 pl-10 pr-3 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-slate-300 focus:ring-4 focus:ring-slate-950/5"
+        className="w-full rounded-2xl border border-line bg-white/75 py-2.5 pl-10 pr-3 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-slate-300 focus:ring-4 focus:ring-slate-950/5 dark:bg-white/5"
       />
     </div>
   );
@@ -108,7 +108,7 @@ function TagList({ tags }) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       {tags.map((tag) => (
-        <span key={tag} className="rounded-full border border-line bg-white/70 px-2.5 py-1 text-xs font-medium text-muted">
+        <span key={tag} className="rounded-full border border-line bg-white/70 px-2.5 py-1 text-xs font-medium text-muted dark:bg-white/5">
           {tag}
         </span>
       ))}
@@ -128,13 +128,13 @@ function TabNavigation({ activeTab, onChange }) {
               type="button"
               onClick={() => onChange(id)}
               className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                active ? "bg-slate-950 text-white shadow-sm" : "text-muted hover:bg-white/75 hover:text-ink"
+                active ? "bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950" : "text-muted hover:bg-white/75 hover:text-ink dark:hover:bg-white/5"
               }`}
             >
               <Icon className="h-4 w-4" />
               {label}
               {id === "products" ? (
-                <span className={`rounded-full px-2 py-0.5 text-[10px] ${active ? "bg-white/15" : "bg-slate-100"}`}>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] ${active ? "bg-white/15" : "bg-slate-100 dark:bg-white/10"}`}>
                   Soon
                 </span>
               ) : null}
@@ -185,7 +185,7 @@ function DocumentsTab({
         <Card className="overflow-hidden p-0">
           <div className="overflow-x-auto teviq-scrollbar">
             <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="border-b border-line bg-slate-50/80 text-xs uppercase tracking-[0.14em] text-muted">
+              <thead className="border-b border-line bg-slate-50/80 text-xs uppercase tracking-[0.14em] text-muted dark:bg-white/5">
                 <tr>
                   <th className="px-5 py-4">Document</th>
                   <th className="px-5 py-4">Type</th>
@@ -196,10 +196,10 @@ function DocumentsTab({
               </thead>
               <tbody className="divide-y divide-line/70">
                 {documents.map((doc) => (
-                  <tr key={doc.documentId} className="bg-white/45">
+                  <tr key={doc.documentId} className="bg-white/45 dark:bg-transparent">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-100 text-slate-600">
+                        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300">
                           <FileText className="h-4 w-4" />
                         </div>
                         <div>
@@ -450,7 +450,7 @@ function FaqsTab({
 function ProductsTab() {
   return (
     <Card className="overflow-hidden">
-      <div className="rounded-3xl border border-dashed border-line bg-white/55 p-8 text-center">
+      <div className="rounded-3xl border border-dashed border-line bg-white/55 p-8 text-center dark:bg-white/5">
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white">
           <Package className="h-5 w-5" />
         </div>

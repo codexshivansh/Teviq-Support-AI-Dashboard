@@ -96,7 +96,21 @@ function ProgressHeader({ step }) {
 
 function StepShell({ step, title, description, children, onBack, footer }) {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.09),_transparent_34%),#f8fafc] px-4 py-6 text-ink sm:px-6 lg:px-8">
+    // This onboarding screen always renders on a fixed light page background,
+    // so the --color-* CSS vars are pinned to their light values here
+    // regardless of the dashboard's dark-mode setting on an ancestor element
+    // — otherwise text-ink/text-muted would flip to near-white and become
+    // invisible against this hardcoded-light background.
+    <div
+      className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.09),_transparent_34%),#f8fafc] px-4 py-6 text-ink sm:px-6 lg:px-8"
+      style={{
+        "--color-ink": "15 23 42",
+        "--color-muted": "100 116 139",
+        "--color-line": "226 232 240",
+        "--color-panel": "rgba(255, 255, 255, 0.78)",
+        colorScheme: "light"
+      }}
+    >
       <ProgressHeader step={step} />
       <motion.div
         key={step}

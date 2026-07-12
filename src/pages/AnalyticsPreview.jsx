@@ -208,8 +208,8 @@ export function AnalyticsPreview({ brandId, onBrandChange }) {
               )}
             </AnalyticsPanel>
             <AnalyticsPanel title="Channel split" minHeight="min-h-[340px]">
-              <div className="flex min-h-56 flex-col items-center justify-center rounded-3xl border border-dashed border-line bg-white/55 p-8 text-center">
-                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-100 text-slate-500">
+              <div className="flex min-h-56 flex-col items-center justify-center rounded-3xl border border-dashed border-line bg-white/55 p-8 text-center dark:bg-white/5">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400">
                   <Radio className="h-5 w-5" />
                 </div>
                 <p className="mt-4 text-sm font-semibold text-ink">Not available yet</p>
