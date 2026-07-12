@@ -17,6 +17,7 @@ import {
   X
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTeviqAuth } from "../auth/AuthContext";
 import { getBrand } from "../data/brands";
 import { useBrands } from "../hooks/useBrands";
@@ -183,15 +184,35 @@ function ThemeSwitcher() {
 
 function ProfileMenu({ avatar, name, subtitle, onSignOut, compact }) {
   const [open, setOpen] = useState(false);
+  const [menuRect, setMenuRect] = useState(null);
   const containerRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!open) return undefined;
 
-    function handlePointerDown(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setOpen(false);
+    // The trigger button lives inside a header/bar that uses backdrop-blur —
+    // per the CSS spec, an ancestor with backdrop-filter becomes the
+    // containing block for position:fixed descendants. That trapped our old
+    // "fixed inset-0" backdrop inside that thin header box instead of the
+    // real viewport, so the dimmed backdrop never actually covered the page
+    // and content behind it kept showing through. Rendering the backdrop +
+    // menu into a portal on document.body escapes that ancestor entirely, so
+    // this is a real structural fix, not a cache workaround.
+    function updatePosition() {
+      if (containerRef.current) {
+        setMenuRect(containerRef.current.getBoundingClientRect());
       }
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    function handlePointerDown(event) {
+      const insideTrigger = containerRef.current && containerRef.current.contains(event.target);
+      const insideMenu = menuRef.current && menuRef.current.contains(event.target);
+      if (!insideTrigger && !insideMenu) setOpen(false);
     }
 
     function handleKeyDown(event) {
@@ -201,64 +222,73 @@ function ProfileMenu({ avatar, name, subtitle, onSignOut, compact }) {
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative z-40">
+    <div ref={containerRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
-        className={`relative z-10 flex items-center gap-1.5 rounded-3xl border border-line/80 bg-white/78 p-1.5 shadow-sm transition hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 ${compact ? "" : "pr-2"}`}
+        className={`flex items-center gap-1.5 rounded-3xl border border-line/80 bg-white/78 p-1.5 shadow-sm transition hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 ${compact ? "" : "pr-2"}`}
       >
         {avatar}
         <MoreVertical className="h-4 w-4 text-muted" />
       </button>
 
-      {open ? (
-        <button
-          type="button"
-          className="fixed inset-0 z-40 cursor-default bg-slate-950/20 backdrop-blur-[1px]"
-          onClick={() => setOpen(false)}
-          aria-label="Close account menu"
-          tabIndex={-1}
-        />
-      ) : null}
+      {open && menuRect
+        ? createPortal(
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-[100] cursor-default bg-slate-950/20 backdrop-blur-[1px]"
+                onClick={() => setOpen(false)}
+                aria-label="Close account menu"
+                tabIndex={-1}
+              />
+              <div
+                ref={menuRef}
+                role="menu"
+                className="fixed z-[110] w-72 overflow-hidden rounded-3xl border border-line/80 bg-white shadow-card dark:border-white/10 dark:bg-slate-900"
+                style={{
+                  top: menuRect.bottom + 8,
+                  right: window.innerWidth - menuRect.right
+                }}
+              >
+                <div className="flex items-center gap-3 border-b border-line/70 p-4 dark:border-white/10">
+                  {avatar}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-ink">{name}</p>
+                    <p className="truncate text-xs text-muted">{subtitle}</p>
+                  </div>
+                </div>
 
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-3xl border border-line/80 bg-white shadow-card dark:border-white/10 dark:bg-slate-900"
-        >
-          <div className="flex items-center gap-3 border-b border-line/70 p-4 dark:border-white/10">
-            {avatar}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-ink">{name}</p>
-              <p className="truncate text-xs text-muted">{subtitle}</p>
-            </div>
-          </div>
+                <div className="p-4">
+                  <ThemeSwitcher />
+                </div>
 
-          <div className="p-4">
-            <ThemeSwitcher />
-          </div>
-
-          <div className="border-t border-line/70 p-2 dark:border-white/10">
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
-            >
-              <LogOut className="h-4 w-4" />
-              Log out
-            </button>
-          </div>
-        </div>
-      ) : null}
+                <div className="border-t border-line/70 p-2 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    className="flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </button>
+                </div>
+              </div>
+            </>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
