@@ -6,7 +6,7 @@ export function Card({ children, className = "" }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28 }}
-      className={`rounded-3xl border border-white/70 bg-panel p-5 shadow-card backdrop-blur-xl ${className}`}
+      className={`rounded-3xl border border-white/70 bg-panel p-5 shadow-card backdrop-blur-xl dark:border-white/10 ${className}`}
     >
       {children}
     </motion.section>

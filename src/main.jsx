@@ -4,12 +4,15 @@ import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import { AuthProvider } from "./auth/AuthContext.jsx";
 import { CLERK_PUBLISHABLE_KEY } from "./auth/authConfig.js";
+import { ThemeProvider } from "./theme/ThemeContext.jsx";
 import "./styles.css";
 
 const app = (
-  <AuthProvider>
-    <App />
-  </AuthProvider>
+  <ThemeProvider>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </ThemeProvider>
 );
 
 createRoot(document.getElementById("root")).render(

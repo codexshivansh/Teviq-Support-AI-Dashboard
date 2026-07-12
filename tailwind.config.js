@@ -1,13 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
       colors: {
-        ink: "#0f172a",
-        muted: "#64748b",
-        line: "#e2e8f0",
-        panel: "rgba(255,255,255,0.78)"
+        // rgb(var(--x) / <alpha-value>) lets Tailwind's opacity modifiers
+        // (e.g. text-ink/70) keep working while the base value flips with
+        // the .dark class — see :root/.dark in styles.css for the values.
+        ink: "rgb(var(--color-ink) / <alpha-value>)",
+        muted: "rgb(var(--color-muted) / <alpha-value>)",
+        line: "rgb(var(--color-line) / <alpha-value>)",
+        panel: "var(--color-panel)"
       },
       boxShadow: {
         soft: "0 24px 70px rgba(15, 23, 42, 0.08)",

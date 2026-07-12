@@ -4,17 +4,23 @@ import {
   Code2,
   Database,
   Home,
+  LogOut,
   Menu,
   MessagesSquare,
+  Monitor,
+  Moon,
+  MoreVertical,
   Settings,
   ShoppingBag,
   Sparkles,
+  Sun,
   X
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTeviqAuth } from "../auth/AuthContext";
 import { getBrand } from "../data/brands";
 import { useBrands } from "../hooks/useBrands";
+import { useTheme } from "../theme/ThemeContext";
 
 const navItems = [
   { id: "home", label: "Overview", icon: Home },
@@ -33,7 +39,7 @@ function WorkspaceSelector({ brandId, onBrandChange, compact = false }) {
   const canSwitchBrands = typeof onBrandChange === "function";
 
   return (
-    <div className={`block rounded-3xl border border-line/80 bg-white/78 shadow-sm ${compact ? "px-3 py-2" : "p-3"}`}>
+    <div className={`block rounded-3xl border border-line/80 bg-white/78 shadow-sm dark:bg-white/5 ${compact ? "px-3 py-2" : "p-3"}`}>
       <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted">Workspace</span>
       <div className="mt-2 flex items-center gap-3">
         <span
@@ -76,7 +82,7 @@ function Sidebar({ activePage, onNavigate, onClose, brandId, onBrandChange }) {
   const { isDemoSession } = useTeviqAuth();
 
   return (
-    <aside className="flex h-full w-72 flex-col border-r border-white/70 bg-white/72 px-4 py-5 shadow-soft backdrop-blur-2xl lg:w-76">
+    <aside className="flex h-full w-72 flex-col border-r border-white/70 bg-white/72 px-4 py-5 shadow-soft backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/90 lg:w-76">
       <div className="flex items-center justify-between gap-3 px-2">
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 text-white shadow-card">
@@ -113,8 +119,8 @@ function Sidebar({ activePage, onNavigate, onClose, brandId, onBrandChange }) {
               }}
               className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-semibold transition ${
                 isActive
-                  ? "bg-slate-950 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-white hover:text-ink"
+                  ? "bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950"
+                  : "text-slate-600 hover:bg-white hover:text-ink dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -124,11 +130,11 @@ function Sidebar({ activePage, onNavigate, onClose, brandId, onBrandChange }) {
         })}
       </nav>
 
-      <div className="mt-auto rounded-3xl border border-line/80 bg-white/75 p-4">
+      <div className="mt-auto rounded-3xl border border-line/80 bg-white/75 p-4 dark:bg-white/5">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
           {isDemoSession ? "Demo mode" : "Secure workspace"}
         </p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
+        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
           {isDemoSession
             ? "Instant Urban Demo access for client walkthroughs."
             : "Authenticated access for knowledge, connectors and workspace setup."}
@@ -138,55 +144,141 @@ function Sidebar({ activePage, onNavigate, onClose, brandId, onBrandChange }) {
   );
 }
 
+const THEME_OPTIONS = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "Default", icon: Monitor }
+];
+
+function ThemeSwitcher() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <div>
+      <p className="px-1 text-xs font-bold uppercase tracking-[0.14em] text-muted">Theme</p>
+      <div className="mt-2 grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1 dark:bg-white/5">
+        {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
+          const active = theme === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setTheme(value)}
+              aria-pressed={active}
+              className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-xs font-semibold transition ${
+                active
+                  ? "bg-white text-ink shadow-sm dark:bg-slate-800"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ProfileMenu({ avatar, name, subtitle, onSignOut, compact }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function handlePointerDown(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Account menu"
+        className={`flex items-center gap-1.5 rounded-3xl border border-line/80 bg-white/78 p-1.5 shadow-sm transition hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 ${compact ? "" : "pr-2"}`}
+      >
+        {avatar}
+        <MoreVertical className="h-4 w-4 text-muted" />
+      </button>
+
+      {open ? (
+        <div
+          role="menu"
+          className="absolute right-0 z-30 mt-2 w-72 overflow-hidden rounded-3xl border border-line/80 bg-white shadow-card dark:border-white/10 dark:bg-slate-900"
+        >
+          <div className="flex items-center gap-3 border-b border-line/70 p-4 dark:border-white/10">
+            {avatar}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-ink">{name}</p>
+              <p className="truncate text-xs text-muted">{subtitle}</p>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <ThemeSwitcher />
+          </div>
+
+          <div className="border-t border-line/70 p-2 dark:border-white/10">
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="flex w-full items-center gap-2 rounded-2xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 dark:hover:bg-rose-500/10"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function UserProfileControl({ compact = false }) {
   const { isDemoSession, signOut, user } = useTeviqAuth();
 
   if (!isDemoSession && user) {
     const displayName = user.fullName || user.primaryEmailAddress?.emailAddress || "Teviq user";
+    const email = user.primaryEmailAddress?.emailAddress || "";
     const imageUrl = user.imageUrl;
 
-    return (
-      <div className={`flex items-center gap-2 rounded-3xl border border-line/80 bg-white/78 px-2 py-2 shadow-sm ${compact ? "max-w-[150px]" : "px-3"}`}>
-        <div className={`${compact ? "hidden" : "hidden text-right sm:block"}`}>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Signed in</p>
-          <p className="max-w-36 truncate text-sm font-semibold text-ink">{displayName}</p>
-        </div>
-        {imageUrl ? (
-          <img src={imageUrl} alt="" className="h-9 w-9 rounded-2xl object-cover" />
-        ) : (
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-slate-950 text-xs font-black text-white">
-            {displayName.slice(0, 2).toUpperCase()}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={signOut}
-          className="rounded-2xl border border-line bg-white px-2.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
-        >
-          Sign out
-        </button>
-      </div>
+    const avatar = imageUrl ? (
+      <img src={imageUrl} alt="" className="h-9 w-9 rounded-2xl object-cover" />
+    ) : (
+      <span className="grid h-9 w-9 place-items-center rounded-2xl bg-slate-950 text-xs font-black text-white dark:bg-white dark:text-slate-950">
+        {displayName.slice(0, 2).toUpperCase()}
+      </span>
     );
+
+    return <ProfileMenu avatar={avatar} name={displayName} subtitle={email || "Signed in"} onSignOut={signOut} compact={compact} />;
   }
 
-  return (
-    <div className={`flex items-center gap-2 rounded-3xl border border-teal-200/70 bg-teal-50/80 px-2 py-2 shadow-sm ${compact ? "max-w-[150px]" : "px-3"}`}>
-      <span className="grid h-9 w-9 place-items-center rounded-2xl bg-teal-700 text-xs font-black text-white">
-        UD
-      </span>
-      <div className={compact ? "hidden" : "hidden sm:block"}>
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-teal-700">Demo session</p>
-        <p className="text-sm font-semibold text-ink">Urban Demo</p>
-      </div>
-      <button
-        type="button"
-        onClick={signOut}
-        className="rounded-2xl border border-teal-200 bg-white px-2.5 py-2 text-xs font-bold text-teal-800 transition hover:bg-teal-50"
-      >
-        Sign out
-      </button>
-    </div>
+  const avatar = (
+    <span className="grid h-9 w-9 place-items-center rounded-2xl bg-teal-700 text-xs font-black text-white">
+      UD
+    </span>
   );
+
+  return <ProfileMenu avatar={avatar} name="Urban Demo" subtitle="Demo session" onSignOut={signOut} compact={compact} />;
 }
 
 export function Layout({ activePage, onNavigate, brandId, onBrandChange, children }) {
@@ -224,9 +316,9 @@ export function Layout({ activePage, onNavigate, brandId, onBrandChange, childre
       ) : null}
 
       <main className="lg:pl-72">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/70 bg-white/70 px-4 backdrop-blur-2xl lg:hidden">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/70 bg-white/70 px-4 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/80 lg:hidden">
           <button
-            className="grid h-10 w-10 place-items-center rounded-2xl border border-line bg-white"
+            className="grid h-10 w-10 place-items-center rounded-2xl border border-line bg-white dark:bg-white/5"
             onClick={() => setOpen(true)}
             aria-label="Open navigation"
           >
@@ -239,7 +331,7 @@ export function Layout({ activePage, onNavigate, brandId, onBrandChange, childre
           <UserProfileControl compact />
         </header>
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mb-6 hidden items-center justify-between rounded-[28px] border border-white/70 bg-white/68 px-4 py-3 shadow-sm backdrop-blur-2xl lg:flex">
+          <div className="mb-6 hidden items-center justify-between rounded-[28px] border border-white/70 bg-white/68 px-4 py-3 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-white/5 lg:flex">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Admin portal</p>
               <p className="mt-1 text-sm font-semibold text-ink">Manage AI support for {brand.name}</p>
