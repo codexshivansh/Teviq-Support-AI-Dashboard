@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FileText,
   HelpCircle,
@@ -491,37 +491,6 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
   const [savingFaq, setSavingFaq] = useState(false);
   const [deletingFaqId, setDeletingFaqId] = useState("");
 
-  const headerAction = useMemo(() => {
-    if (activeTab === "documents") {
-      return (
-        <Button onClick={() => fileRef.current?.click()} disabled={uploading}>
-          <UploadCloud className="h-4 w-4" />
-          {uploading ? "Uploading" : "Upload document"}
-        </Button>
-      );
-    }
-
-    if (activeTab === "policies") {
-      return (
-        <Button onClick={() => startNewPolicy()}>
-          <Plus className="h-4 w-4" />
-          Add Policy
-        </Button>
-      );
-    }
-
-    if (activeTab === "faqs") {
-      return (
-        <Button onClick={() => startNewFaq()}>
-          <Plus className="h-4 w-4" />
-          Add FAQ
-        </Button>
-      );
-    }
-
-    return null;
-  }, [activeTab, uploading]);
-
   async function loadDocuments() {
     setLoadingDocuments(true);
     setError("");
@@ -734,7 +703,6 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
         description="Manage documents, structured policies and FAQs. All knowledge stays scoped to the selected brand."
         brandId={brandId}
         onBrandChange={onBrandChange}
-        action={headerAction}
       />
 
       <input
