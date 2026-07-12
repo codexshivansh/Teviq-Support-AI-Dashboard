@@ -183,5 +183,15 @@ export const api = {
   },
   getBrands() {
     return request("/api/brands", { requiresAuth: true });
+  },
+  getBrandSettings(brandId) {
+    return request(`/api/brands/${brandId}/settings`, { requiresAuth: true });
+  },
+  updateBrandSettings(brandId, payload) {
+    return request(`/api/brands/${brandId}/settings`, {
+      requiresAuth: true,
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    });
   }
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Clock3, Palette, Phone, Store } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
@@ -6,60 +6,121 @@ import { Button } from "../components/Button";
 import { LoadingState, ErrorState } from "../components/States";
 import { getBrand } from "../data/brands";
 import { useBrands } from "../hooks/useBrands";
+import { api } from "../services/api";
 
-function buildDefaults(brandId, brands) {
-  const brand = getBrand(brandId, brands);
+const ESCALATION_RULES = ["Fraud/legal/police keywords", "Abusive language", "Medical allergy or safety complaint"];
+
+function toSettingsState(brand, saved) {
   return {
     brandName: brand.name,
     industry: brand.industry,
-    themeColor: brand.themeColor,
-    supportPhone: "+91 90000 00000",
-    supportEmail: "support@example.com",
-    welcomeMessage: `Hi, welcome to ${brand.name} support. How can I help?`,
-    quickActions: ["Track my order", "Return / Exchange", "Shipping & Delivery", "Talk to Support"],
-    businessHours: "Mon-Sat, 10:00 AM - 7:00 PM IST",
-    escalationRules: ["Fraud/legal/police keywords", "Abusive language", "Medical allergy or safety complaint"]
+    themeColor: saved.themeColor || brand.themeColor || "#0f172a",
+    supportPhone: saved.supportPhone || "",
+    supportEmail: saved.supportEmail || "",
+    welcomeMessage: saved.welcomeMessage || `Hi, welcome to ${brand.name} support. How can I help?`,
+    quickActions: saved.quickActions?.length
+      ? saved.quickActions
+      : ["Track my order", "Return / Exchange", "Shipping & Delivery", "Talk to Support"],
+    businessHours: saved.businessHours || ""
   };
 }
 
 export function Settings({ brandId, onBrandChange }) {
   const { brands, loading: brandsLoading, error: brandsError } = useBrands();
-  const defaults = useMemo(() => buildDefaults(brandId, brands), [brandId, brands]);
-  const [settings, setSettings] = useState(defaults);
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const loadSettings = useCallback(() => {
+    if (!brandId) return;
+    let active = true;
+    setLoading(true);
+    setError("");
+    setSaveError("");
+    setSaved(false);
+
+    api
+      .getBrandSettings(brandId)
+      .then((result) => {
+        if (!active) return;
+        const brand = getBrand(brandId, brands);
+        setSettings(toSettingsState(brand, result?.settings || {}));
+      })
+      .catch((err) => {
+        if (active) setError(err.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [brandId, brands]);
 
   useEffect(() => {
-    setSettings(buildDefaults(brandId, brands));
+    const cleanup = loadSettings();
+    return cleanup;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId, brands]);
 
   function update(field, value) {
+    setSaved(false);
     setSettings((current) => ({ ...current, [field]: value }));
   }
 
   function updateQuickAction(index, value) {
+    setSaved(false);
     setSettings((current) => ({
       ...current,
       quickActions: current.quickActions.map((action, actionIndex) => (actionIndex === index ? value : action))
     }));
   }
 
-  function reset() {
-    setSettings(defaults);
+  async function save() {
+    if (!settings) return;
+    setSaving(true);
+    setSaveError("");
+    setSaved(false);
+
+    try {
+      const result = await api.updateBrandSettings(brandId, {
+        welcomeMessage: settings.welcomeMessage,
+        quickActions: settings.quickActions,
+        supportPhone: settings.supportPhone,
+        supportEmail: settings.supportEmail,
+        businessHours: settings.businessHours,
+        themeColor: settings.themeColor
+      });
+      const brand = getBrand(brandId, brands);
+      setSettings(toSettingsState(brand, result?.settings || {}));
+      setSaved(true);
+    } catch (err) {
+      setSaveError(err.message);
+    } finally {
+      setSaving(false);
+    }
   }
+
+  const busy = brandsLoading || loading;
 
   return (
     <>
       <PageHeader
-        eyebrow="Demo settings"
+        eyebrow="Brand settings"
         title="Brand settings"
-        description="Configure the brand profile, widget tone and escalation rules for the demo workspace. Changes are local-only."
+        description="Configure the widget greeting, quick actions and support contact details this brand's AI assistant uses live."
         brandId={brandId}
         onBrandChange={onBrandChange}
       />
 
-      {brandsLoading ? <LoadingState label="Loading brand" /> : null}
-      {brandsError && !brandsLoading ? <ErrorState message={brandsError} /> : null}
+      {busy ? <LoadingState label="Loading brand settings" /> : null}
+      {(brandsError || error) && !busy ? <ErrorState message={brandsError || error} /> : null}
 
-      {!brandsLoading && !brandsError ? (
+      {!busy && !brandsError && !error && settings ? (
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-5">
           <Card>
@@ -69,7 +130,7 @@ export function Settings({ brandId, onBrandChange }) {
               </div>
               <div>
                 <p className="text-sm font-semibold text-ink">Brand profile</p>
-                <p className="text-xs text-muted">Demo workspace identity</p>
+                <p className="text-xs text-muted">Set during onboarding</p>
               </div>
             </div>
 
@@ -78,16 +139,18 @@ export function Settings({ brandId, onBrandChange }) {
                 <span className="text-sm font-semibold text-ink">Brand name</span>
                 <input
                   value={settings.brandName}
-                  onChange={(event) => update("brandName", event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                  disabled
+                  title="Brand name is set during onboarding and can't be changed here."
+                  className="mt-2 w-full cursor-not-allowed rounded-2xl border border-line bg-slate-50 px-4 py-3 text-sm text-muted outline-none"
                 />
               </label>
               <label className="block">
                 <span className="text-sm font-semibold text-ink">Industry</span>
                 <input
                   value={settings.industry}
-                  onChange={(event) => update("industry", event.target.value)}
-                  className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70"
+                  disabled
+                  title="Industry is set during onboarding and can't be changed here."
+                  className="mt-2 w-full cursor-not-allowed rounded-2xl border border-line bg-slate-50 px-4 py-3 text-sm text-muted outline-none"
                 />
               </label>
             </div>
@@ -180,9 +243,16 @@ export function Settings({ brandId, onBrandChange }) {
               </label>
             </div>
 
-            <Button variant="secondary" className="mt-5" onClick={reset}>
-              Reset demo values
-            </Button>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Button onClick={save} disabled={saving}>
+                {saving ? "Saving..." : "Save changes"}
+              </Button>
+              <Button variant="secondary" onClick={loadSettings} disabled={saving}>
+                Discard changes
+              </Button>
+              {saved ? <span className="text-sm font-semibold text-emerald-600">Saved. The live widget now uses these values.</span> : null}
+              {saveError ? <span className="text-sm font-semibold text-rose-600">{saveError}</span> : null}
+            </div>
           </Card>
         </div>
 
@@ -220,7 +290,7 @@ export function Settings({ brandId, onBrandChange }) {
               </div>
             </div>
             <div className="mt-5 space-y-3">
-              {settings.escalationRules.map((rule) => (
+              {ESCALATION_RULES.map((rule) => (
                 <div key={rule} className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3 text-sm font-medium text-amber-800">
                   {rule}
                 </div>

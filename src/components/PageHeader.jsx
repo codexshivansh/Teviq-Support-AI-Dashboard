@@ -1,7 +1,13 @@
 import { motion } from "framer-motion";
-import { BrandSelector } from "./BrandSelector";
 
-export function PageHeader({ title, eyebrow, description, brandId, onBrandChange, action }) {
+// Workspace/brand switching lives in exactly one place — the sidebar's
+// WorkspaceSelector (see components/Layout.jsx). PageHeader used to render
+// its own second BrandSelector on every page (and Layout rendered a third,
+// compact one in the top admin bar), so switching brands showed three
+// separate dropdowns at once. brandId/onBrandChange are still accepted so
+// call sites don't need to change, but they're no longer used to render a
+// second selector here.
+export function PageHeader({ title, eyebrow, description, action }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -16,10 +22,7 @@ export function PageHeader({ title, eyebrow, description, brandId, onBrandChange
         <h1 className="text-2xl font-semibold tracking-tight text-ink md:text-3xl">{title}</h1>
         {description ? <p className="mt-2 text-sm leading-6 text-muted">{description}</p> : null}
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {brandId && onBrandChange ? <BrandSelector brandId={brandId} onChange={onBrandChange} /> : null}
-        {action}
-      </div>
+      {action ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center">{action}</div> : null}
     </motion.div>
   );
 }

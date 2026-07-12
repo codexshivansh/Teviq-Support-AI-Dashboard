@@ -244,12 +244,9 @@ export function Layout({ activePage, onNavigate, brandId, onBrandChange, childre
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Admin portal</p>
               <p className="mt-1 text-sm font-semibold text-ink">Manage AI support for {brand.name}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-72">
-                <WorkspaceSelector brandId={brandId} onBrandChange={onBrandChange} compact />
-              </div>
-              <UserProfileControl />
-            </div>
+            {/* Workspace switching lives in the sidebar only (see WorkspaceSelector above) — this used
+               to render a second, duplicate switcher here plus a third one via PageHeader. */}
+            <UserProfileControl />
           </div>
           {children}
         </div>
