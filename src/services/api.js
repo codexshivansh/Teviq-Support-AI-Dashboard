@@ -181,6 +181,9 @@ export const api = {
   getAnalytics(brandId, days = 30) {
     return request(`/api/analytics/${brandId}?days=${days}`, { requiresAuth: true });
   },
+  getConversations(brandId, days = 30) {
+    return request(`/api/conversations/${brandId}?days=${days}`, { requiresAuth: true });
+  },
   getBrands() {
     return request("/api/brands", { requiresAuth: true });
   },

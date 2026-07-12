@@ -111,9 +111,19 @@ function EmptyMetricValue() {
   return <span className="text-xl text-slate-500">No data yet</span>;
 }
 
+function formatMs(ms) {
+  if (ms === null || ms === undefined) return "n/a";
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
+}
+
+function formatPercent(rate) {
+  return `${Math.round((rate || 0) * 100)}%`;
+}
+
 export function Home({ brandId, onBrandChange, onNavigate }) {
   const [knowledge, setKnowledge] = useState(null);
   const [shopify, setShopify] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [localSetup, setLocalSetup] = useState(() => getLocalSetupFlags(brandId));
@@ -122,11 +132,12 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
     let active = true;
     setLoading(true);
     setError("");
-    Promise.all([api.getKnowledgeDocuments(brandId), api.getShopifyStatus(brandId)])
-      .then(([knowledgeData, shopifyData]) => {
+    Promise.all([api.getKnowledgeDocuments(brandId), api.getShopifyStatus(brandId), api.getAnalytics(brandId)])
+      .then(([knowledgeData, shopifyData, analyticsData]) => {
         if (!active) return;
         setKnowledge(knowledgeData);
         setShopify(shopifyData);
+        setAnalytics(analyticsData);
       })
       .catch((err) => {
         if (active) setError(err.message);
@@ -188,14 +199,42 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
       {error && !loading ? <ErrorState message={error} /> : null}
 
       {!loading && !error ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <MetricCard icon={MessageSquare} label="Total chats" value={<EmptyMetricValue />} detail="Install widget to start seeing conversations" tone="blue" />
-          <MetricCard icon={Bot} label="Resolution rate" value={<EmptyMetricValue />} detail="Install widget to start seeing conversations" tone="green" />
-          <MetricCard icon={AlertTriangle} label="Escalations" value={<EmptyMetricValue />} detail="Install widget to start seeing conversations" tone="amber" />
-          <MetricCard icon={Database} label="Knowledge docs" value={knowledge?.stats?.documentCount || 0} detail={`${knowledge?.stats?.chunkCount || 0} indexed chunks`} />
-          <MetricCard icon={ShoppingBag} label="Shopify status" value={shopify?.status === "connected" ? "Connected" : "Not ready"} detail={`${shopify?.productCount || 0} products synced`} tone="green" />
-          <MetricCard icon={Clock3} label="Avg response time" value={<EmptyMetricValue />} detail="Install widget to start seeing conversations" />
-        </div>
+        (() => {
+          const hasChats = Boolean(analytics?.totalConversations > 0);
+          return (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <MetricCard
+                icon={MessageSquare}
+                label="Total chats"
+                value={hasChats ? analytics.totalConversations : <EmptyMetricValue />}
+                detail={hasChats ? "Last 30 days" : "Install widget to start seeing conversations"}
+                tone="blue"
+              />
+              <MetricCard
+                icon={Bot}
+                label="Resolution rate"
+                value={hasChats ? formatPercent(analytics.deflectionRate?.rate) : <EmptyMetricValue />}
+                detail={hasChats ? "Handled without escalation" : "Install widget to start seeing conversations"}
+                tone="green"
+              />
+              <MetricCard
+                icon={AlertTriangle}
+                label="Escalations"
+                value={hasChats ? analytics.escalationRate?.escalatedCount ?? 0 : <EmptyMetricValue />}
+                detail={hasChats ? `${formatPercent(analytics.escalationRate?.rate)} of messages` : "Install widget to start seeing conversations"}
+                tone="amber"
+              />
+              <MetricCard icon={Database} label="Knowledge docs" value={knowledge?.stats?.documentCount || 0} detail={`${knowledge?.stats?.chunkCount || 0} indexed chunks`} />
+              <MetricCard icon={ShoppingBag} label="Shopify status" value={shopify?.status === "connected" ? "Connected" : "Not ready"} detail={`${shopify?.productCount || 0} products synced`} tone="green" />
+              <MetricCard
+                icon={Clock3}
+                label="Avg response time"
+                value={hasChats && analytics.responseTimeStats?.sampleCount > 0 ? formatMs(analytics.responseTimeStats.medianMs) : <EmptyMetricValue />}
+                detail={hasChats && analytics.responseTimeStats?.sampleCount > 0 ? `${analytics.responseTimeStats.sampleCount} samples (median)` : "Install widget to start seeing conversations"}
+              />
+            </div>
+          );
+        })()
       ) : null}
 
       <div className="mt-6 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
