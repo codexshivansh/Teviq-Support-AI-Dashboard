@@ -207,23 +207,33 @@ function ProfileMenu({ avatar, name, subtitle, onSignOut, compact }) {
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative z-40">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
-        className={`flex items-center gap-1.5 rounded-3xl border border-line/80 bg-white/78 p-1.5 shadow-sm transition hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 ${compact ? "" : "pr-2"}`}
+        className={`relative z-10 flex items-center gap-1.5 rounded-3xl border border-line/80 bg-white/78 p-1.5 shadow-sm transition hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 ${compact ? "" : "pr-2"}`}
       >
         {avatar}
         <MoreVertical className="h-4 w-4 text-muted" />
       </button>
 
       {open ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 cursor-default bg-slate-950/20 backdrop-blur-[1px]"
+          onClick={() => setOpen(false)}
+          aria-label="Close account menu"
+          tabIndex={-1}
+        />
+      ) : null}
+
+      {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-2 w-72 overflow-hidden rounded-3xl border border-line/80 bg-white shadow-card dark:border-white/10 dark:bg-slate-900"
+          className="absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-3xl border border-line/80 bg-white shadow-card dark:border-white/10 dark:bg-slate-900"
         >
           <div className="flex items-center gap-3 border-b border-line/70 p-4 dark:border-white/10">
             {avatar}
