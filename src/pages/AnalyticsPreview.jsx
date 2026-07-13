@@ -112,6 +112,34 @@ export function AnalyticsPreview({ brandId, onBrandChange }) {
     };
   }, [brandId]);
 
+  useEffect(() => {
+    let active = true;
+
+    function refreshAnalytics() {
+      api
+        .getAnalytics(brandId)
+        .then((result) => {
+          if (active) setData(result);
+        })
+        .catch(() => {
+          // Preserve the last successful analytics snapshot when a background
+          // refresh fails; initial-load errors are handled above.
+        });
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") refreshAnalytics();
+    }
+
+    window.addEventListener("focus", refreshAnalytics);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshAnalytics);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [brandId]);
+
   const hasData = Boolean(data?.totalConversations > 0);
 
   return (
@@ -148,7 +176,7 @@ export function AnalyticsPreview({ brandId, onBrandChange }) {
               icon={AlertTriangle}
               label="Escalation rate"
               value={hasData ? formatPercent(data.escalationRate.rate) : <EmptyMetricValue />}
-              detail={hasData ? `${data.escalationRate.escalatedCount} of ${data.escalationRate.totalMessages} messages` : "Install widget to start seeing conversations"}
+              detail={hasData ? `${data.escalationRate.escalatedCount} of ${data.escalationRate.totalConversations} conversations` : "Install widget to start seeing conversations"}
               tone="amber"
             />
             <MetricCard

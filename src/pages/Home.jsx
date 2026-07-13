@@ -152,6 +152,35 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
   }, [brandId]);
 
   useEffect(() => {
+    let active = true;
+
+    function refreshAnalytics() {
+      api
+        .getAnalytics(brandId)
+        .then((analyticsData) => {
+          if (active) setAnalytics(analyticsData);
+        })
+        .catch(() => {
+          // The initial page load owns the visible error state. A background
+          // refresh should keep the last known metrics instead of replacing
+          // the dashboard with a transient network error.
+        });
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") refreshAnalytics();
+    }
+
+    window.addEventListener("focus", refreshAnalytics);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshAnalytics);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [brandId]);
+
+  useEffect(() => {
     setLocalSetup(getLocalSetupFlags(brandId));
   }, [brandId]);
 
@@ -221,7 +250,7 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
                 icon={AlertTriangle}
                 label="Escalations"
                 value={hasChats ? analytics.escalationRate?.escalatedCount ?? 0 : <EmptyMetricValue />}
-                detail={hasChats ? `${formatPercent(analytics.escalationRate?.rate)} of messages` : "Install widget to start seeing conversations"}
+                detail={hasChats ? `${formatPercent(analytics.escalationRate?.rate)} of conversations` : "Install widget to start seeing conversations"}
                 tone="amber"
               />
               <MetricCard icon={Database} label="Knowledge docs" value={knowledge?.stats?.documentCount || 0} detail={`${knowledge?.stats?.chunkCount || 0} indexed chunks`} />
