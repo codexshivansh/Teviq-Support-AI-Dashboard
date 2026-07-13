@@ -1,4 +1,5 @@
-export const API_BASE_URL = "https://teviq-support-ai-backend.onrender.com";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://teviq-support-ai-backend.onrender.com";
 
 let authTokenGetter = null;
 let demoSessionGetter = () => false;
@@ -168,6 +169,19 @@ export const api = {
   },
   getShopifyStatus(brandId) {
     return request(`/api/integrations/shopify/${brandId}/status`, { requiresAuth: true });
+  },
+  startShopifyConnection(brandId, payload) {
+    return request(`/api/integrations/shopify/${brandId}/connect`, {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+  disconnectShopify(brandId) {
+    return request(`/api/integrations/shopify/${brandId}/connection`, {
+      requiresAuth: true,
+      method: "DELETE"
+    });
   },
   syncShopify(brandId) {
     return request(`/api/integrations/shopify/${brandId}/sync`, {
