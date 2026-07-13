@@ -65,6 +65,22 @@ button {
 
 ::selection {
   background: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+::-moz-selection {
+  background: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+.dark ::selection {
+  background: rgba(45, 212, 191, 0.42);
+  color: #ffffff;
+}
+
+.dark ::-moz-selection {
+  background: rgba(45, 212, 191, 0.42);
+  color: #ffffff;
 }
 
 .teviq-scrollbar {

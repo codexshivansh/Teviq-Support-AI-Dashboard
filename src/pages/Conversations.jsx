@@ -109,10 +109,13 @@ export function Conversations({ brandId, onBrandChange }) {
       {error && !loading ? <ErrorState message={error} /> : null}
 
       {!loading && !error ? (
-        <div className="grid gap-5 xl:grid-cols-[1fr_390px]">
-          <Card className="overflow-hidden p-0">
+        <div className="grid items-stretch gap-5 xl:h-[clamp(560px,calc(100dvh-300px),760px)] xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
+          <Card className="h-[min(680px,calc(100dvh-180px))] min-h-[520px] overflow-hidden !p-0 xl:h-full xl:min-h-0">
             {conversations.length ? (
-              <div className="divide-y divide-line/70">
+              <div
+                className="teviq-scrollbar h-full divide-y divide-line/70 overflow-y-auto overscroll-contain"
+                aria-label="Conversation list"
+              >
                 {conversations.map((conversation) => (
                   <button
                     key={conversation.id}
@@ -143,7 +146,7 @@ export function Conversations({ brandId, onBrandChange }) {
                 ))}
               </div>
             ) : (
-              <div className="p-5">
+              <div className="flex h-full items-center p-5">
                 <EmptyState
                   title={allConversations.length ? "No conversations match" : "No conversations yet"}
                   description={
@@ -156,29 +159,34 @@ export function Conversations({ brandId, onBrandChange }) {
             )}
           </Card>
 
-          <Card className="min-h-[520px]">
+          <Card className="h-[min(680px,calc(100dvh-180px))] min-h-[520px] overflow-hidden !p-0 xl:h-full xl:min-h-0">
             {selected ? (
-              <>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-ink">{selected.customer}</p>
-                    <p className="mt-1 text-xs text-muted">{selected.channel}</p>
+              <div className="flex h-full min-h-0 flex-col">
+                <div className="shrink-0 p-5 pb-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-ink">{selected.customer}</p>
+                      <p className="mt-1 text-xs text-muted">{selected.channel}</p>
+                    </div>
+                    <button
+                      className="grid h-9 w-9 place-items-center rounded-2xl border border-line bg-white text-slate-500 dark:bg-white/5 dark:text-slate-300"
+                      onClick={() => setSelectedId(null)}
+                      aria-label="Clear selected conversation"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    className="grid h-9 w-9 place-items-center rounded-2xl border border-line bg-white text-slate-500 dark:bg-white/5 dark:text-slate-300"
-                    onClick={() => setSelectedId(null)}
-                    aria-label="Clear selected conversation"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <StatusPill status={selected.status} />
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">{selected.intent}</span>
+                  </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <StatusPill status={selected.status} />
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">{selected.intent}</span>
-                </div>
-
-                <div className="mt-6 space-y-3">
+                <div
+                  className="teviq-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain border-t border-line/60 px-5 pb-5 pt-4"
+                  aria-label={`Conversation with ${selected.customer}`}
+                >
                   {selected.messages.map((message, index) => (
                     <div
                       key={`${message.role}-${index}`}
@@ -192,9 +200,11 @@ export function Conversations({ brandId, onBrandChange }) {
                     </div>
                   ))}
                 </div>
-              </>
+              </div>
             ) : (
-              <EmptyState title="Select a conversation" description="Open a conversation from the list to inspect the transcript." />
+              <div className="flex h-full items-center p-5">
+                <EmptyState title="Select a conversation" description="Open a conversation from the list to inspect the transcript." />
+              </div>
             )}
           </Card>
         </div>
