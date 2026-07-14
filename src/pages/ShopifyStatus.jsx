@@ -118,9 +118,11 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState(null);
 
-  const load = useCallback(async ({ reset = false } = {}) => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async ({ reset = false, silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
     if (reset) {
       setStatus(null);
       setProducts([]);
@@ -136,9 +138,9 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
         setProducts([]);
       }
     } catch (err) {
-      setError(err.message);
+      if (!silent) setError(err.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [brandId]);
 
@@ -150,6 +152,24 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
   useEffect(() => {
     setNotice(readOauthNotice());
   }, []);
+
+  useEffect(() => {
+    function refreshVisibleData() {
+      if (document.visibilityState === "visible" && !syncing && !connecting && !disconnecting) {
+        load({ silent: true });
+      }
+    }
+
+    const intervalId = window.setInterval(refreshVisibleData, 10000);
+    window.addEventListener("focus", refreshVisibleData);
+    document.addEventListener("visibilitychange", refreshVisibleData);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshVisibleData);
+      document.removeEventListener("visibilitychange", refreshVisibleData);
+    };
+  }, [connecting, disconnecting, load, syncing]);
 
   async function connect(storeUrl) {
     setConnecting(true);
@@ -172,7 +192,7 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
     try {
       await api.syncShopify(brandId);
       await load();
-      setNotice({ type: "success", message: "Shopify data is up to date." });
+      setNotice({ type: "success", message: "Shopify data has been reconciled." });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -226,9 +246,14 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
                 </Button>
               )
             ) : null}
-            <Button onClick={sync} disabled={syncing || loading}>
+            <Button
+              variant="secondary"
+              onClick={sync}
+              disabled={syncing || loading}
+              title="Check Shopify for any updates that webhooks may have missed"
+            >
               <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Syncing" : "Sync now"}
+              {syncing ? "Reconciling" : "Reconcile"}
             </Button>
           </div>
         ) : null}
@@ -271,7 +296,7 @@ export function ShopifyStatus({ brandId, onBrandChange }) {
             <MetricCard icon={ShoppingBag} label="Status" value={status.status === "active" || status.status === "connected" ? "Connected" : "Attention needed"} detail={status.shopName || status.storeHost || (isDemo ? "Demo store" : "Shopify")} tone="green" />
             <MetricCard label="Products" value={status.productCount || 0} detail="Catalog items available" />
             <MetricCard label="Orders" value={status.orderCount || 0} detail="Order records available" />
-            <MetricCard label="Last synced" value={formatDate(status.lastSyncedAt)} detail={isDemo ? "Sample connector" : "Secure Shopify sync"} />
+            <MetricCard label="Last updated" value={formatDate(status.lastSyncedAt)} detail={isDemo ? "Sample connector" : "Real-time Shopify updates"} />
           </div>
 
           <Card className="mt-5">
