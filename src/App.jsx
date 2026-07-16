@@ -1,22 +1,27 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Layout } from "./components/Layout";
-import { DEFAULT_BRAND_ID } from "./data/brands";
+import { DEFAULT_BRAND_ID, DEMO_BRAND_ID } from "./data/brands";
 import { useBrands } from "./hooks/useBrands";
-import { Home } from "./pages/Home";
-import { KnowledgeBase } from "./pages/KnowledgeBase";
-import { Playground } from "./pages/Playground";
-import { ShopifyStatus } from "./pages/ShopifyStatus";
-import { AnalyticsPreview } from "./pages/AnalyticsPreview";
-import { Settings } from "./pages/Settings";
-import { Conversations } from "./pages/Conversations";
-import { WidgetInstall } from "./pages/WidgetInstall";
-import { useEffect, useState } from "react";
 import { LoginPage } from "./components/LoginPage";
-import { Onboarding } from "./pages/Onboarding";
 import { useTeviqAuth } from "./auth/AuthContext";
 import { setAuthTokenGetter } from "./services/api";
 
 const ONBOARDING_MINIMIZED_KEY = "teviq_onboarding_minimized";
+
+function lazyNamed(factory, exportName) {
+  return lazy(() => factory().then((module) => ({ default: module[exportName] })));
+}
+
+const Home = lazyNamed(() => import("./pages/Home"), "Home");
+const Conversations = lazyNamed(() => import("./pages/Conversations"), "Conversations");
+const KnowledgeBase = lazyNamed(() => import("./pages/KnowledgeBase"), "KnowledgeBase");
+const Playground = lazyNamed(() => import("./pages/Playground"), "Playground");
+const ShopifyStatus = lazyNamed(() => import("./pages/ShopifyStatus"), "ShopifyStatus");
+const AnalyticsPreview = lazyNamed(() => import("./pages/AnalyticsPreview"), "AnalyticsPreview");
+const WidgetInstall = lazyNamed(() => import("./pages/WidgetInstall"), "WidgetInstall");
+const Settings = lazyNamed(() => import("./pages/Settings"), "Settings");
+const Onboarding = lazyNamed(() => import("./pages/Onboarding"), "Onboarding");
 
 const pages = {
   home: Home,
@@ -109,6 +114,20 @@ function BrandNotConfigured({ onSignOut }) {
   );
 }
 
+function WorkspaceLoading({ fullScreen = false }) {
+  return (
+    <div
+      className={`${fullScreen ? "min-h-screen" : "min-h-[360px]"} grid place-items-center bg-slate-50/40 text-slate-500 dark:bg-slate-950/20 dark:text-slate-400`}
+      role="status"
+      aria-live="polite"
+    >
+      <div className="rounded-3xl border border-line bg-white px-5 py-4 text-sm font-semibold shadow-card dark:bg-slate-900 dark:text-slate-200">
+        Loading secure workspace...
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const auth = useTeviqAuth();
   const { brands, loading: brandsLoading } = useBrands(auth.isAuthenticated);
@@ -126,13 +145,16 @@ export default function App() {
   const user = auth.user;
   const publicMetadata = user?.publicMetadata || {};
   const isTeviqAdmin = !auth.isDemoSession && publicMetadata.role === "teviq_admin";
+  const canSelectWorkspace = isTeviqAdmin || auth.isDemoSession;
   const onboardingComplete = publicMetadata.onboarding_complete === true || onboardingCompleteOverride;
   const shouldShowOnboarding = !auth.isDemoSession && !isTeviqAdmin && !onboardingComplete && !onboardingMinimized;
   const assignedBrandId = getBrandIdFromMetadata(publicMetadata, brands);
   const hasAssignedBrand = Boolean(assignedBrandId);
   const storedBrandIsValid = brandsLoading ? true : brands.some((brand) => brand.id === brandId);
-  const activeBrandId = isTeviqAdmin ? (storedBrandIsValid ? brandId : DEFAULT_BRAND_ID) : assignedBrandId;
-  const handleBrandChange = isTeviqAdmin ? setBrandId : undefined;
+  const activeBrandId = canSelectWorkspace
+    ? (storedBrandIsValid ? brandId : auth.isDemoSession ? DEMO_BRAND_ID : DEFAULT_BRAND_ID)
+    : assignedBrandId;
+  const handleBrandChange = canSelectWorkspace ? setBrandId : undefined;
 
   setAuthTokenGetter(auth.getAuthToken, {
     isDemoSession: () => auth.isDemoSession
@@ -181,13 +203,7 @@ export default function App() {
   }
 
   if (!auth.isLoaded) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
-        <div className="rounded-3xl border border-line bg-white px-5 py-4 text-sm font-semibold shadow-card dark:bg-slate-900 dark:text-slate-200">
-          Loading secure workspace...
-        </div>
-      </div>
-    );
+    return <WorkspaceLoading fullScreen />;
   }
 
   if (!auth.isAuthenticated) {
@@ -196,20 +212,22 @@ export default function App() {
 
   if (shouldShowOnboarding) {
     return (
-      <Onboarding
-        metadata={publicMetadata}
-        refreshUser={auth.refreshUser}
-        onNavigate={navigate}
-        onComplete={() => {
-          setOnboardingCompleteOverride(true);
-          setOnboardingMinimized(false);
-          navigate("home");
-        }}
-      />
+      <Suspense fallback={<WorkspaceLoading fullScreen />}>
+        <Onboarding
+          metadata={publicMetadata}
+          refreshUser={auth.refreshUser}
+          onNavigate={navigate}
+          onComplete={() => {
+            setOnboardingCompleteOverride(true);
+            setOnboardingMinimized(false);
+            navigate("home");
+          }}
+        />
+      </Suspense>
     );
   }
 
-  if (!isTeviqAdmin && !hasAssignedBrand) {
+  if (!canSelectWorkspace && !hasAssignedBrand) {
     return <BrandNotConfigured onSignOut={auth.signOut} />;
   }
 
@@ -223,7 +241,9 @@ export default function App() {
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2 }}
         >
-          <Page brandId={activeBrandId} onBrandChange={handleBrandChange} onNavigate={navigate} />
+          <Suspense fallback={<WorkspaceLoading />}>
+            <Page brandId={activeBrandId} onBrandChange={handleBrandChange} onNavigate={navigate} />
+          </Suspense>
         </motion.div>
       </AnimatePresence>
     </Layout>

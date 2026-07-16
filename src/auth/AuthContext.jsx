@@ -1,13 +1,13 @@
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { DEFAULT_BRAND_ID } from "../data/brands";
+import { DEMO_BRAND_ID } from "../data/brands";
 import { CLERK_PUBLISHABLE_KEY, getStoredDemoSession, isDemoLoginEnabled, setStoredDemoSession } from "./authConfig";
 
 const AuthContext = createContext(null);
 
 function selectDemoWorkspace() {
   try {
-    localStorage.setItem("teviq:selectedBrandId", DEFAULT_BRAND_ID);
+    localStorage.setItem("teviq:selectedBrandId", DEMO_BRAND_ID);
   } catch {
     // Best-effort demo workspace selection.
   }

@@ -1,4 +1,5 @@
 export const DEFAULT_BRAND_ID = "teviq";
+export const DEMO_BRAND_ID = "urban-demo";
 
 function titleFromBrandId(brandId) {
   return String(brandId || "Workspace")
