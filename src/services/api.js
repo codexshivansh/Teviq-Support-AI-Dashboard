@@ -28,15 +28,18 @@ async function getAuthToken({ required = false } = {}) {
 
 async function request(path, options = {}) {
   const { requiresAuth = false, ...fetchOptions } = options;
-  const token = await getAuthToken({ required: requiresAuth });
   const authHeaders = {};
 
-  if (token) {
-    authHeaders.Authorization = `Bearer ${token}`;
-  } else if (demoSessionGetter()) {
-    authHeaders["x-teviq-demo-auth"] = "true";
-  } else if (requiresAuth) {
-    throw new Error("Secure session is not ready. Please sign out and sign in again.");
+  if (requiresAuth) {
+    const token = await getAuthToken({ required: true });
+
+    if (token) {
+      authHeaders.Authorization = `Bearer ${token}`;
+    } else if (demoSessionGetter()) {
+      authHeaders["x-teviq-demo-auth"] = "true";
+    } else {
+      throw new Error("Secure session is not ready. Please sign out and sign in again.");
+    }
   }
 
   const headers = fetchOptions.body instanceof FormData
