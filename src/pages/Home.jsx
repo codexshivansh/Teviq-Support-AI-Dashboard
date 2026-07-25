@@ -17,6 +17,7 @@ import { Card, MetricCard } from "../components/Card";
 import { ErrorState, LoadingState } from "../components/States";
 import { api } from "../services/api";
 import { getBrand } from "../data/brands";
+import { getSetupCompletion, isShopifyConnected } from "../lib/setupProgress";
 
 const setupCopy = {
   knowledge: {
@@ -45,7 +46,7 @@ const setupCopy = {
   },
   live: {
     title: "AI Live",
-    detail: "Go live when knowledge, commerce data, testing and install are ready.",
+    detail: "Confirm the launcher is working on the production storefront.",
     page: "widget-install",
     icon: Rocket
   }
@@ -186,18 +187,14 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
 
   const brand = getBrand(brandId);
   const setupSteps = useMemo(() => {
-    const hasKnowledge = (knowledge?.stats?.documentCount || 0) > 0;
-    const hasShopify = shopify?.status === "connected";
-    const hasPlayground = Boolean(localSetup.playground);
-    const hasInstall = Boolean(localSetup.install);
-    const isLive = hasKnowledge && hasShopify && hasPlayground && hasInstall;
+    const completion = getSetupCompletion({ knowledge, shopify, localSetup });
 
     return [
-      { id: "knowledge", completed: hasKnowledge, ...setupCopy.knowledge },
-      { id: "shopify", completed: hasShopify, ...setupCopy.shopify },
-      { id: "playground", completed: hasPlayground, ...setupCopy.playground },
-      { id: "install", completed: hasInstall, ...setupCopy.install },
-      { id: "live", completed: isLive, ...setupCopy.live }
+      { id: "knowledge", completed: completion.knowledge, ...setupCopy.knowledge },
+      { id: "shopify", completed: completion.shopify, ...setupCopy.shopify },
+      { id: "playground", completed: completion.playground, ...setupCopy.playground },
+      { id: "install", completed: completion.install, ...setupCopy.install },
+      { id: "live", completed: completion.live, ...setupCopy.live }
     ];
   }, [knowledge, localSetup, shopify]);
 
@@ -254,7 +251,7 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
                 tone="amber"
               />
               <MetricCard icon={Database} label="Knowledge docs" value={knowledge?.stats?.documentCount || 0} detail={`${knowledge?.stats?.chunkCount || 0} indexed chunks`} />
-              <MetricCard icon={ShoppingBag} label="Shopify status" value={shopify?.status === "connected" ? "Connected" : "Not ready"} detail={`${shopify?.productCount || 0} products synced`} tone="green" />
+              <MetricCard icon={ShoppingBag} label="Shopify status" value={isShopifyConnected(shopify) ? "Connected" : "Not ready"} detail={`${shopify?.productCount || 0} products synced`} tone="green" />
               <MetricCard
                 icon={Clock3}
                 label="Avg response time"
