@@ -17,7 +17,7 @@ import { api } from "../services/api";
 
 const STEP_KEY = "teviq_onboarding_step";
 const MINIMIZED_KEY = "teviq_onboarding_minimized";
-const WIDGET_URL = "https://teviq-support-ai-widget.vercel.app/widget.js";
+const WIDGET_URL = "https://teviq-support-ai-widget.vercel.app/v1.0.0/widget.js";
 const API_URL = "https://teviq-support-ai-backend.onrender.com";
 
 const brandCategories = ["Fashion", "Beauty", "Electronics", "Home & Living", "Sports", "Other"];
