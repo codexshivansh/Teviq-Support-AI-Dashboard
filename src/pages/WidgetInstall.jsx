@@ -4,7 +4,7 @@ import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 
-const WIDGET_URL = "https://teviq-support-ai-widget.vercel.app/widget.js";
+const WIDGET_URL = "https://teviq-support-ai-widget.vercel.app/v1.0.0/widget.js";
 const API_URL = "https://teviq-support-ai-backend.onrender.com";
 
 function StepList({ title, steps }) {
