@@ -201,6 +201,18 @@ export const api = {
   getConversations(brandId, days = 30) {
     return request(`/api/conversations/${brandId}?days=${days}`, { requiresAuth: true });
   },
+  // Get conversations filtered by channel ('widget' | 'whatsapp' | 'instagram')
+  getConversationsByChannel(brandId, channel, days = 30) {
+    return request(`/api/conversations/${brandId}?channel=${channel}&days=${days}`, { requiresAuth: true });
+  },
+  // Send a manual WhatsApp message from the dashboard
+  sendWhatsAppMessage(brandId, to, text) {
+    return request('/api/whatsapp/send', {
+      method: 'POST',
+      requiresAuth: true,
+      body: JSON.stringify({ brandId, to, text })
+    });
+  },
   getBrands() {
     return request("/api/brands", { requiresAuth: true });
   },
