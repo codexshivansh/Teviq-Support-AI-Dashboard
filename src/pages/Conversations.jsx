@@ -4,6 +4,7 @@ import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { EmptyState, ErrorState, LoadingState } from "../components/States";
 import { api } from "../services/api";
+import { formatPhone, getInitials } from "../lib/formatPhone";
 
 // "resolved" deliberately isn't a filter option here — chat_logs has no
 // explicit resolution signal (see backend/services/conversations.service.js
@@ -246,11 +247,16 @@ export function Conversations({ brandId, onBrandChange }) {
                     }`}
                   >
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-ink">{conversation.customer}</p>
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                          {getInitials(conversation.customer, conversation.customerId)}
                         </div>
-                        <p className="mt-1 truncate text-sm text-slate-600 dark:text-slate-400">{conversation.lastMessage}</p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-ink">{conversation.customer || formatPhone(conversation.customerId)}</p>
+                          </div>
+                          <p className="mt-1 truncate text-sm text-slate-600 dark:text-slate-400">{conversation.lastMessage}</p>
+                        </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
@@ -314,13 +320,18 @@ export function Conversations({ brandId, onBrandChange }) {
                   {selected.messages.map((message, index) => (
                     <div
                       key={`${message.role}-${index}`}
-                      className={`rounded-3xl p-4 text-sm leading-6 ${
+                      className={`max-w-[80%] rounded-3xl p-4 text-sm leading-6 ${
                         message.role === "customer"
-                          ? "ml-8 bg-slate-950 text-white dark:bg-slate-800"
-                          : "mr-8 border border-line bg-white/75 text-slate-700 dark:bg-white/5 dark:text-slate-300"
+                          ? "mr-auto rounded-bl-sm border border-line bg-white/75 text-slate-700 dark:bg-white/5 dark:text-slate-300"
+                          : "ml-auto rounded-br-sm bg-indigo-600 text-white"
                       }`}
                     >
                       {message.text}
+                      {message.timestamp ? (
+                        <p className={`mt-1 text-[10px] ${message.role === "customer" ? "text-slate-400" : "text-indigo-100"}`}>
+                          {formatTime(message.timestamp)}
+                        </p>
+                      ) : null}
                     </div>
                   ))}
                 </div>
