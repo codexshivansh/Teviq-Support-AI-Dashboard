@@ -40,6 +40,29 @@ function formatTime(value) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
+function formatMessageTime(value) {
+  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(value));
+}
+
+function getMessageDayKey(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function formatMessageDay(value) {
+  const date = new Date(value);
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfMessageDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayDifference = Math.round((startOfToday - startOfMessageDay) / (24 * 60 * 60 * 1000));
+
+  if (dayDifference === 0) return "Today";
+  if (dayDifference === 1) return "Yesterday";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
+}
+
 function StatusPill({ status }) {
   const styles = {
     open: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
@@ -196,7 +219,7 @@ export function Conversations({ brandId, onBrandChange }) {
   }
 
   return (
-    <>
+    <div className="xl:flex xl:h-full xl:min-h-0 xl:flex-col">
       <PageHeader
         eyebrow="Inbox"
         title="Conversations"
@@ -231,7 +254,7 @@ export function Conversations({ brandId, onBrandChange }) {
       {error && !loading ? <ErrorState message={error} /> : null}
 
       {!loading && !error ? (
-        <div className="grid items-stretch gap-5 xl:h-[clamp(560px,calc(100dvh-300px),760px)] xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
+        <div className="grid items-stretch gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
           <Card className="h-[min(680px,calc(100dvh-180px))] min-h-[520px] overflow-hidden !p-0 xl:h-full xl:min-h-0">
             {conversations.length ? (
               <div
@@ -317,23 +340,35 @@ export function Conversations({ brandId, onBrandChange }) {
                   className="teviq-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain border-t border-line/60 px-5 pb-5 pt-4"
                   aria-label={`Conversation with ${selected.customer}`}
                 >
-                  {selected.messages.map((message, index) => (
-                    <div
-                      key={`${message.role}-${index}`}
-                      className={`max-w-[80%] rounded-3xl p-4 text-sm leading-6 ${
-                        message.role === "customer"
-                          ? "mr-auto rounded-bl-sm border border-line bg-white/75 text-slate-700 dark:bg-white/5 dark:text-slate-300"
-                          : "ml-auto rounded-br-sm bg-indigo-600 text-white"
-                      }`}
-                    >
-                      {message.text}
-                      {message.timestamp ? (
-                        <p className={`mt-1 text-[10px] ${message.role === "customer" ? "text-slate-400" : "text-indigo-100"}`}>
-                          {formatTime(message.timestamp)}
-                        </p>
-                      ) : null}
-                    </div>
-                  ))}
+                  {selected.messages.map((message, index) => {
+                    const messageDay = getMessageDayKey(message.timestamp);
+                    const previousMessageDay = getMessageDayKey(selected.messages[index - 1]?.timestamp);
+                    const showDateSeparator = Boolean(messageDay && messageDay !== previousMessageDay);
+
+                    return (
+                      <div key={`${message.role}-${index}`} className="space-y-3">
+                        {showDateSeparator ? (
+                          <p className="mx-auto w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-white/10 dark:text-slate-300">
+                            {formatMessageDay(message.timestamp)}
+                          </p>
+                        ) : null}
+                        <div
+                          className={`max-w-[80%] rounded-3xl p-4 text-sm leading-6 ${
+                            message.role === "customer"
+                              ? "mr-auto rounded-bl-sm border border-line bg-white/75 text-slate-700 dark:bg-white/5 dark:text-slate-300"
+                              : "ml-auto rounded-br-sm bg-indigo-600 text-white"
+                          }`}
+                        >
+                          {message.text}
+                          {message.timestamp ? (
+                            <p className={`mt-1 text-right text-[10px] opacity-70 ${message.role === "customer" ? "text-slate-400" : "text-indigo-100"}`}>
+                              {formatMessageTime(message.timestamp)}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {selected.channel === "whatsapp" ? (
@@ -386,6 +421,6 @@ export function Conversations({ brandId, onBrandChange }) {
           </Card>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

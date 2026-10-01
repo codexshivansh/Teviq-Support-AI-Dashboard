@@ -240,6 +240,7 @@ export default function App() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2 }}
+          className={activePage === "conversations" ? "xl:h-full xl:min-h-0" : ""}
         >
           <Suspense fallback={<WorkspaceLoading />}>
             <Page brandId={activeBrandId} onBrandChange={handleBrandChange} onNavigate={navigate} />

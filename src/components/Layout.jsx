@@ -324,9 +324,10 @@ function UserProfileControl({ compact = false }) {
 export function Layout({ activePage, onNavigate, brandId, onBrandChange, children }) {
   const [open, setOpen] = useState(false);
   const brand = getBrand(brandId);
+  const isConversationsPage = activePage === "conversations";
 
   return (
-    <div className="min-h-screen text-ink">
+    <div className="h-dvh overflow-hidden text-ink">
       <div className="fixed inset-y-0 left-0 z-30 hidden lg:block">
         <Sidebar
           activePage={activePage}
@@ -355,8 +356,8 @@ export function Layout({ activePage, onNavigate, brandId, onBrandChange, childre
         </div>
       ) : null}
 
-      <main className="lg:pl-72">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/70 bg-white/70 px-4 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/80 lg:hidden">
+      <main className="flex h-full min-h-0 flex-col lg:pl-72">
+        <header className="z-20 flex h-16 shrink-0 items-center justify-between border-b border-white/70 bg-white/70 px-4 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/80 lg:hidden">
           <button
             className="grid h-10 w-10 place-items-center rounded-2xl border border-line bg-white dark:bg-white/5"
             onClick={() => setOpen(true)}
@@ -370,17 +371,21 @@ export function Layout({ activePage, onNavigate, brandId, onBrandChange, childre
           </div>
           <UserProfileControl compact />
         </header>
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mb-6 hidden items-center justify-between rounded-[28px] border border-white/70 bg-white/68 px-4 py-3 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-white/5 lg:flex">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Admin portal</p>
-              <p className="mt-1 text-sm font-semibold text-ink">Manage AI support for {brand.name}</p>
+        <div className="teviq-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div className={`mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${isConversationsPage ? "xl:flex xl:h-full xl:min-h-0 xl:flex-col" : ""}`}>
+            <div className="mb-6 hidden items-center justify-between rounded-[28px] border border-white/70 bg-white/68 px-4 py-3 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-white/5 lg:flex">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Admin portal</p>
+                <p className="mt-1 text-sm font-semibold text-ink">Manage AI support for {brand.name}</p>
+              </div>
+              {/* Workspace switching lives in the sidebar only (see WorkspaceSelector above) — this used
+                 to render a second, duplicate switcher here plus a third one via PageHeader. */}
+              <UserProfileControl />
             </div>
-            {/* Workspace switching lives in the sidebar only (see WorkspaceSelector above) — this used
-               to render a second, duplicate switcher here plus a third one via PageHeader. */}
-            <UserProfileControl />
+            <div className={isConversationsPage ? "xl:min-h-0 xl:flex-1" : ""}>
+              {children}
+            </div>
           </div>
-          {children}
         </div>
       </main>
     </div>
