@@ -63,6 +63,14 @@ function formatMessageDay(value) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
 }
 
+function getMessageGroupPosition(messages, index) {
+  const role = messages[index]?.role;
+  return {
+    isFirstInGroup: messages[index - 1]?.role !== role,
+    isLastInGroup: messages[index + 1]?.role !== role
+  };
+}
+
 function StatusPill({ status }) {
   const styles = {
     open: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
@@ -337,34 +345,50 @@ export function Conversations({ brandId, onBrandChange }) {
                 </div>
 
                 <div
-                  className="teviq-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain border-t border-line/60 px-5 pb-5 pt-4"
+                  className="teviq-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-line/60 px-5 pb-5 pt-4"
                   aria-label={`Conversation with ${selected.customer}`}
                 >
                   {selected.messages.map((message, index) => {
                     const messageDay = getMessageDayKey(message.timestamp);
                     const previousMessageDay = getMessageDayKey(selected.messages[index - 1]?.timestamp);
                     const showDateSeparator = Boolean(messageDay && messageDay !== previousMessageDay);
+                    const { isFirstInGroup, isLastInGroup } = getMessageGroupPosition(selected.messages, index);
+                    const isCustomerMessage = message.role === "customer";
+                    const messageSpacing = index === 0 ? "" : showDateSeparator || isFirstInGroup ? "mt-3" : "mt-0.5";
+                    const bubbleCornerClasses = isCustomerMessage
+                      ? isLastInGroup
+                        ? "rounded-bl-sm"
+                        : isFirstInGroup
+                          ? "rounded-bl-lg"
+                          : "rounded-tl-lg rounded-bl-lg"
+                      : isLastInGroup
+                        ? "rounded-br-sm"
+                        : isFirstInGroup
+                          ? "rounded-br-lg"
+                          : "rounded-tr-lg rounded-br-lg";
 
                     return (
-                      <div key={`${message.role}-${index}`} className="space-y-3">
+                      <div key={`${message.role}-${index}`} className={`space-y-3 ${messageSpacing}`}>
                         {showDateSeparator ? (
                           <p className="mx-auto w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-white/10 dark:text-slate-300">
                             {formatMessageDay(message.timestamp)}
                           </p>
                         ) : null}
                         <div
-                          className={`max-w-[80%] rounded-3xl p-4 text-sm leading-6 ${
-                            message.role === "customer"
-                              ? "mr-auto rounded-bl-sm border border-line bg-white/75 text-slate-700 dark:bg-white/5 dark:text-slate-300"
-                              : "ml-auto rounded-br-sm bg-indigo-600 text-white"
+                          className={`max-w-[80%] rounded-3xl p-4 text-sm leading-6 ${bubbleCornerClasses} ${
+                            isCustomerMessage
+                              ? "mr-auto border border-line bg-white/75 text-slate-700 dark:bg-white/5 dark:text-slate-300"
+                              : "ml-auto bg-indigo-600 text-white"
                           }`}
                         >
-                          {message.text}
-                          {message.timestamp ? (
-                            <p className={`mt-1 text-right text-[10px] opacity-70 ${message.role === "customer" ? "text-slate-400" : "text-indigo-100"}`}>
-                              {formatMessageTime(message.timestamp)}
-                            </p>
-                          ) : null}
+                          <p>
+                            {message.text}
+                            {message.timestamp && isLastInGroup ? (
+                              <span className={`float-right ml-2 mt-1 select-none text-[10px] leading-4 opacity-70 ${isCustomerMessage ? "text-slate-400" : "text-indigo-100"}`}>
+                                {formatMessageTime(message.timestamp)}
+                              </span>
+                            ) : null}
+                          </p>
                         </div>
                       </div>
                     );
