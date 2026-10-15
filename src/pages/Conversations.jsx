@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Globe2, Inbox, Instagram, Loader2, MessageCircle, Search, Send, X } from "lucide-react";
+import { Bot, ChevronDown, Globe2, Inbox, Instagram, Loader2, MessageCircle, Search, Send, UserRound, X } from "lucide-react";
 import { Card } from "../components/Card";
 import { EmptyState, ErrorState, LoadingState } from "../components/States";
 import { api } from "../services/api";
@@ -31,6 +31,22 @@ function channelLabel(channel) {
 
 function intentLabel(intent) {
   return (intent || "Unknown").replace(/_/g, " ");
+}
+
+function customerLabel(conversation) {
+  return formatPhone(conversation.customer || conversation.customerId);
+}
+
+function customerInitials(conversation) {
+  const customer = conversation.customer || "";
+  const isPhoneNumber = /^91\d{10}$/.test(customer.replace(/\D/g, ""));
+  return getInitials(isPhoneNumber ? "" : customer, conversation.customerId);
+}
+
+function messageSender(message) {
+  if (!message) return null;
+  if (message?.role === "customer") return "customer";
+  return message?.source === "human_agent" ? "human_agent" : "teviq_brain";
 }
 
 // Meta's real customer-service window is 24h; matches the backend's
@@ -76,11 +92,11 @@ function formatMessageDay(value) {
 }
 
 function getMessageGroupPosition(messages, index) {
-  const role = messages[index]?.role;
+  const sender = messageSender(messages[index]);
   const day = getMessageDayKey(messages[index]?.timestamp);
   return {
-    isFirstInGroup: messages[index - 1]?.role !== role || getMessageDayKey(messages[index - 1]?.timestamp) !== day,
-    isLastInGroup: messages[index + 1]?.role !== role || getMessageDayKey(messages[index + 1]?.timestamp) !== day
+    isFirstInGroup: messageSender(messages[index - 1]) !== sender || getMessageDayKey(messages[index - 1]?.timestamp) !== day,
+    isLastInGroup: messageSender(messages[index + 1]) !== sender || getMessageDayKey(messages[index + 1]?.timestamp) !== day
   };
 }
 
@@ -131,14 +147,21 @@ function ChannelTabs({ activeTab, onChange }) {
   );
 }
 
-// null when not applicable (not a WhatsApp conversation). Uses the last
-// *customer* message's timestamp, not overall conversation activity — an
-// outbound-only manual send should never make a closed window look open.
-function getWhatsAppWindowStatus(conversation) {
+// The send endpoint checks the customer's latest inbound message across
+// sessions, so the dashboard must do the same. Outbound replies cannot
+// reopen the WhatsApp customer-service window.
+function getWhatsAppWindowStatus(conversation, conversations, now) {
   if (!conversation || conversation.channel !== "whatsapp") return null;
-  const lastCustomerMessage = [...(conversation.messages || [])].reverse().find((message) => message.role === "customer");
-  if (!lastCustomerMessage?.timestamp) return { open: false };
-  const elapsedMs = Date.now() - new Date(lastCustomerMessage.timestamp).getTime();
+  const lastCustomerMessageAt = conversations
+    .filter((item) => item.channel === "whatsapp" && item.customerId === conversation.customerId)
+    .flatMap((item) => item.messages || [])
+    .filter((message) => message.role === "customer" && message.timestamp)
+    .reduce((latest, message) => {
+      const timestamp = new Date(message.timestamp).getTime();
+      return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
+    }, 0);
+  if (!lastCustomerMessageAt) return { open: false };
+  const elapsedMs = now - lastCustomerMessageAt;
   return { open: elapsedMs < WHATSAPP_WINDOW_MS };
 }
 
@@ -154,6 +177,12 @@ export function Conversations({ brandId, onBrandChange }) {
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -192,7 +221,7 @@ export function Conversations({ brandId, onBrandChange }) {
   }, [allConversations, status, intent, search]);
 
   const selected = selectedId === null ? null : conversations.find((conversation) => conversation.id === selectedId) || conversations[0] || null;
-  const whatsappWindow = useMemo(() => getWhatsAppWindowStatus(selected), [selected]);
+  const whatsappWindow = useMemo(() => getWhatsAppWindowStatus(selected, allConversations, now), [selected, allConversations, now]);
 
   // Clear the reply box/error whenever the open conversation changes, so a
   // draft or a stale error from one customer never leaks into the next.
@@ -218,7 +247,7 @@ export function Conversations({ brandId, onBrandChange }) {
                 ...conversation,
                 timestamp: sentAt,
                 lastMessage: textToSend,
-                messages: [...conversation.messages, { role: "assistant", text: textToSend, timestamp: sentAt }]
+                messages: [...conversation.messages, { role: "assistant", text: textToSend, timestamp: sentAt, source: "human_agent" }]
               }
             : conversation
         )
@@ -305,11 +334,11 @@ export function Conversations({ brandId, onBrandChange }) {
                   >
                     <div className="flex min-w-0 items-start gap-3">
                       <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-xs font-bold ${selected?.id === conversation.id ? "bg-indigo-600 text-white shadow-[0_3px_8px_rgba(79,70,229,0.25)]" : "bg-indigo-50 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200"}`}>
-                        {getInitials(conversation.customer, conversation.customerId)}
+                        {customerInitials(conversation)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
-                          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink">{conversation.customer || formatPhone(conversation.customerId)}</p>
+                          <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink">{customerLabel(conversation)}</p>
                           {conversation.timestamp ? <time className="shrink-0 text-[10px] font-medium text-slate-400" dateTime={conversation.timestamp}>{formatConversationTime(conversation.timestamp)}</time> : null}
                         </div>
                         <p className="mt-0.5 truncate text-xs leading-5 text-slate-500 dark:text-slate-400">{conversation.lastMessage || "No messages yet"}</p>
@@ -345,10 +374,10 @@ export function Conversations({ brandId, onBrandChange }) {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-indigo-600 text-xs font-bold text-white shadow-[0_3px_8px_rgba(79,70,229,0.25)]">
-                        {getInitials(selected.customer, selected.customerId)}
+                        {customerInitials(selected)}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-[14px] font-semibold tracking-tight text-ink">{selected.customer || formatPhone(selected.customerId)}</p>
+                        <p className="truncate text-[14px] font-semibold tracking-tight text-ink">{customerLabel(selected)}</p>
                         <div className="mt-0.5 flex items-center gap-2 text-[11px] text-slate-400">
                           <ChannelBadge channel={selected.channel} />
                           <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" aria-hidden="true" />
@@ -357,7 +386,12 @@ export function Conversations({ brandId, onBrandChange }) {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <StatusPill status={selected.status} />
+                      {selected.channel === "whatsapp" ? (
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${whatsappWindow?.open ? "bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/20" : "bg-amber-50 text-amber-700 ring-amber-200/70 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/20"}`}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+                          Window {whatsappWindow?.open ? "open" : "closed"}
+                        </span>
+                      ) : <StatusPill status={selected.status} />}
                       <button
                         type="button"
                         className="grid h-8 w-8 place-items-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-white/10 dark:hover:text-white"
@@ -370,13 +404,14 @@ export function Conversations({ brandId, onBrandChange }) {
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium capitalize text-slate-500 dark:bg-white/10 dark:text-slate-400">{intentLabel(selected.intent)}</span>
-                    {selected.customer && selected.customerId ? <span className="truncate text-[11px] text-slate-400">{formatPhone(selected.customerId)}</span> : null}
+                    {selected.channel === "whatsapp" && selected.status === "escalated" ? <StatusPill status="escalated" /> : null}
+                    {selected.customerId && customerLabel(selected) !== formatPhone(selected.customerId) ? <span className="truncate text-[11px] text-slate-400">{formatPhone(selected.customerId)}</span> : null}
                   </div>
                 </div>
 
                 <div
                   className="teviq-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50/70 px-4 pb-6 pt-5 dark:bg-slate-950/45 sm:px-6"
-                  aria-label={`Conversation with ${selected.customer || formatPhone(selected.customerId)}`}
+                  aria-label={`Conversation with ${customerLabel(selected)}`}
                 >
                   {selected.messages.map((message, index) => {
                     const messageDay = getMessageDayKey(message.timestamp);
@@ -413,8 +448,9 @@ export function Conversations({ brandId, onBrandChange }) {
                         >
                           <p className="flow-root whitespace-pre-wrap break-words">
                             {message.text}
-                            {message.timestamp && isLastInGroup ? (
-                              <span className={`float-right ml-2 mt-1 select-none whitespace-nowrap text-[10px] leading-4 opacity-70 ${isCustomerMessage ? "text-slate-400" : "text-indigo-100"}`}>
+                            {message.timestamp ? (
+                              <span className={`float-right ml-2 mt-1 select-none whitespace-nowrap text-[10px] leading-4 opacity-70 ${isCustomerMessage ? "text-slate-400" : "text-indigo-100"}`} title={!isCustomerMessage ? message.source === "human_agent" ? "Human reply" : "Teviq Brain reply" : undefined}>
+                                {!isCustomerMessage ? message.source === "human_agent" ? <UserRound className="mr-1 inline-block h-3 w-3 align-[-2px]" aria-label="Human reply" /> : <Bot className="mr-1 inline-block h-3 w-3 align-[-2px]" aria-label="Teviq Brain reply" /> : null}
                                 {formatMessageTime(message.timestamp)}
                               </span>
                             ) : null}
