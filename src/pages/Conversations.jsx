@@ -14,9 +14,8 @@ const statuses = ["all", "open", "escalated"];
 const intents = ["all", "order_tracking", "return_exchange", "payment_cod", "product_recommendation", "human_support", "complaint"];
 
 // Channel tabs — "all" maps to the existing unfiltered api.getConversations
-// call, the other three map to api.getConversationsByChannel. Instagram
-// isn't wired up on the backend yet (no data is ever tagged that channel),
-// so its tab will honestly show an empty state rather than fake activity.
+// call; the other three map to api.getConversationsByChannel. Instagram data
+// appears after a Meta account is connected and starts delivering messages.
 const channelTabs = [
   { id: "all", label: "All", icon: Inbox },
   { id: "widget", label: "Website", icon: Globe2 },
@@ -147,13 +146,13 @@ function ChannelTabs({ activeTab, onChange }) {
   );
 }
 
-// The send endpoint checks the customer's latest inbound message across
-// sessions, so the dashboard must do the same. Outbound replies cannot
-// reopen the WhatsApp customer-service window.
-function getWhatsAppWindowStatus(conversation, conversations, now) {
-  if (!conversation || conversation.channel !== "whatsapp") return null;
+// The send endpoints check the customer's latest inbound message across
+// sessions, so the dashboard mirrors that window for WhatsApp and Instagram.
+// Outbound replies cannot reopen the customer-service window.
+function getReplyWindowStatus(conversation, conversations, now, channel) {
+  if (!conversation || conversation.channel !== channel) return null;
   const lastCustomerMessageAt = conversations
-    .filter((item) => item.channel === "whatsapp" && item.customerId === conversation.customerId)
+    .filter((item) => item.channel === channel && item.customerId === conversation.customerId)
     .flatMap((item) => item.messages || [])
     .filter((message) => message.role === "customer" && message.timestamp)
     .reduce((latest, message) => {
@@ -221,7 +220,10 @@ export function Conversations({ brandId, onBrandChange }) {
   }, [allConversations, status, intent, search]);
 
   const selected = selectedId === null ? null : conversations.find((conversation) => conversation.id === selectedId) || conversations[0] || null;
-  const whatsappWindow = useMemo(() => getWhatsAppWindowStatus(selected, allConversations, now), [selected, allConversations, now]);
+  const replyWindow = useMemo(
+    () => getReplyWindowStatus(selected, allConversations, now, selected?.channel),
+    [selected, allConversations, now]
+  );
 
   // Clear the reply box/error whenever the open conversation changes, so a
   // draft or a stale error from one customer never leaks into the next.
@@ -230,14 +232,20 @@ export function Conversations({ brandId, onBrandChange }) {
     setSendError("");
   }, [selected?.id]);
 
-  async function handleSendWhatsApp() {
+  async function handleSendReply() {
     const textToSend = replyText.trim();
     if (!selected || !textToSend || sending) return;
 
     setSending(true);
     setSendError("");
     try {
-      await api.sendWhatsAppMessage(brandId, selected.customerId, textToSend);
+      if (selected.channel === "whatsapp") {
+        await api.sendWhatsAppMessage(brandId, selected.customerId, textToSend);
+      } else if (selected.channel === "instagram") {
+        await api.sendInstagramMessage(brandId, selected.customerId, textToSend);
+      } else {
+        return;
+      }
       const sentAt = new Date().toISOString();
       setReplyText("");
       setAllConversations((previous) =>
@@ -386,10 +394,10 @@ export function Conversations({ brandId, onBrandChange }) {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      {selected.channel === "whatsapp" ? (
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${whatsappWindow?.open ? "bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/20" : "bg-amber-50 text-amber-700 ring-amber-200/70 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/20"}`}>
+                      {selected.channel === "whatsapp" || selected.channel === "instagram" ? (
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${replyWindow?.open ? "bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/20" : "bg-amber-50 text-amber-700 ring-amber-200/70 dark:bg-amber-400/10 dark:text-amber-300 dark:ring-amber-400/20"}`}>
                           <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
-                          Window {whatsappWindow?.open ? "open" : "closed"}
+                          Window {replyWindow?.open ? "open" : "closed"}
                         </span>
                       ) : <StatusPill status={selected.status} />}
                       <button
@@ -461,9 +469,9 @@ export function Conversations({ brandId, onBrandChange }) {
                   })}
                 </div>
 
-                {selected.channel === "whatsapp" ? (
+                {selected.channel === "whatsapp" || selected.channel === "instagram" ? (
                   <div className="shrink-0 border-t border-slate-200/70 bg-white/80 px-4 pb-4 pt-3 dark:border-white/10 dark:bg-slate-900/90 sm:px-5">
-                    {whatsappWindow?.open ? (
+                    {replyWindow?.open ? (
                       <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
                         Reply window open
@@ -481,19 +489,19 @@ export function Conversations({ brandId, onBrandChange }) {
                         onKeyDown={(event) => {
                           if (event.key === "Enter" && !event.shiftKey) {
                             event.preventDefault();
-                            handleSendWhatsApp();
+                            handleSendReply();
                           }
                         }}
-                        disabled={!whatsappWindow?.open || sending}
-                        placeholder="Type a WhatsApp reply..."
-                        aria-label="WhatsApp reply message"
+                        disabled={!replyWindow?.open || sending}
+                        placeholder={`Type an ${selected.channel === "instagram" ? "Instagram" : "WhatsApp"} reply...`}
+                        aria-label={`${selected.channel === "instagram" ? "Instagram" : "WhatsApp"} reply message`}
                         className="min-w-0 flex-1 bg-transparent py-1.5 text-[13px] text-ink outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                       <button
                         type="button"
-                        onClick={handleSendWhatsApp}
-                        disabled={!whatsappWindow?.open || sending || !replyText.trim()}
-                        aria-label="Send WhatsApp reply"
+                        onClick={handleSendReply}
+                        disabled={!replyWindow?.open || sending || !replyText.trim()}
+                        aria-label={`Send ${selected.channel === "instagram" ? "Instagram" : "WhatsApp"} reply`}
                         className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-600 text-white shadow-[0_2px_6px_rgba(79,70,229,0.2)] transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

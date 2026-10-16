@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Clock3, Palette, Phone, Store } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, Instagram, Loader2, Palette, Phone, Store, Unplug } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
@@ -7,6 +7,7 @@ import { LoadingState, ErrorState } from "../components/States";
 import { getBrand } from "../data/brands";
 import { useBrands } from "../hooks/useBrands";
 import { api } from "../services/api";
+import { useTeviqAuth } from "../auth/AuthContext";
 
 const ESCALATION_RULES = ["Fraud/legal/police keywords", "Abusive language", "Medical allergy or safety complaint"];
 
@@ -26,6 +27,7 @@ function toSettingsState(brand, saved) {
 }
 
 export function Settings({ brandId, onBrandChange }) {
+  const { isDemoSession } = useTeviqAuth();
   const { brands, loading: brandsLoading, error: brandsError } = useBrands();
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,67 @@ export function Settings({ brandId, onBrandChange }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [instagramStatus, setInstagramStatus] = useState(null);
+  const [instagramLoading, setInstagramLoading] = useState(true);
+  const [instagramBusy, setInstagramBusy] = useState(false);
+  const [instagramError, setInstagramError] = useState("");
+  const [instagramNotice, setInstagramNotice] = useState(null);
+
+  const loadInstagramStatus = useCallback(async () => {
+    if (!brandId) return;
+    setInstagramLoading(true);
+    setInstagramError("");
+    try {
+      setInstagramStatus(await api.getInstagramStatus(brandId));
+    } catch (err) {
+      setInstagramError(err.message);
+    } finally {
+      setInstagramLoading(false);
+    }
+  }, [brandId]);
+
+  useEffect(() => {
+    loadInstagramStatus();
+  }, [loadInstagramStatus]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("instagram");
+    if (!result) return;
+    setInstagramNotice(result === "connected"
+      ? { type: "success", message: "Instagram account connected. Webhook setup and a live message test are still required." }
+      : { type: "error", message: "Instagram could not be connected. Please retry or check the server configuration." });
+    params.delete("instagram");
+    params.delete("code");
+    const query = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  }, []);
+
+  async function connectInstagram() {
+    setInstagramBusy(true);
+    setInstagramError("");
+    try {
+      const result = await api.startInstagramConnection(brandId);
+      window.location.assign(result.authorizationUrl);
+    } catch (err) {
+      setInstagramError(err.message);
+      setInstagramBusy(false);
+    }
+  }
+
+  async function disconnectInstagram() {
+    setInstagramBusy(true);
+    setInstagramError("");
+    try {
+      await api.disconnectInstagram(brandId);
+      setInstagramNotice({ type: "success", message: "Instagram was disconnected from this workspace." });
+      await loadInstagramStatus();
+    } catch (err) {
+      setInstagramError(err.message);
+    } finally {
+      setInstagramBusy(false);
+    }
+  }
 
   const loadSettings = useCallback(() => {
     if (!brandId) return;
@@ -123,6 +186,53 @@ export function Settings({ brandId, onBrandChange }) {
       {!busy && !brandsError && !error && settings ? (
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-5">
+          <Card>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-fuchsia-600 text-white">
+                  <Instagram className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-ink">Instagram messaging</p>
+                  <p className="mt-1 text-xs leading-5 text-muted">Connect a professional account to route DMs through Teviq Brain.</p>
+                </div>
+              </div>
+              {instagramStatus?.connected ? (
+                <Button variant="secondary" onClick={disconnectInstagram} disabled={instagramBusy || isDemoSession}>
+                  {instagramBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4" />}
+                  Disconnect
+                </Button>
+              ) : (
+                <Button onClick={connectInstagram} disabled={instagramBusy || instagramLoading || !instagramStatus?.oauthConfigured || isDemoSession}>
+                  {instagramBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Instagram className="h-4 w-4" />}
+                  {instagramBusy ? "Connecting..." : "Connect Instagram"}
+                </Button>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-line bg-slate-50/70 p-4 dark:bg-white/[0.03]">
+              {instagramLoading ? (
+                <p className="text-sm text-muted">Checking connection…</p>
+              ) : instagramStatus?.connected ? (
+                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Connected{instagramStatus.connection?.username ? ` as @${instagramStatus.connection.username}` : ""}
+                </div>
+              ) : (
+                <p className="text-sm text-muted">No Instagram account is connected to this workspace.</p>
+              )}
+              {isDemoSession ? <p className="mt-2 text-xs text-muted">Switch to your secure workspace to connect a real account.</p> : null}
+              {instagramStatus && !instagramStatus.oauthConfigured ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">Instagram Login is not configured on the backend yet.</p> : null}
+            </div>
+
+            {instagramNotice ? (
+              <p className={`mt-3 text-sm font-medium ${instagramNotice.type === "success" ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
+                {instagramNotice.message}
+              </p>
+            ) : null}
+            {instagramError ? <p className="mt-3 text-sm font-medium text-rose-600">{instagramError}</p> : null}
+          </Card>
+
           <Card>
             <div className="mb-5 flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 text-white">

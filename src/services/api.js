@@ -195,6 +195,29 @@ export const api = {
   getShopifyProducts(brandId) {
     return request(`/api/integrations/shopify/${brandId}/products`, { requiresAuth: true });
   },
+  getInstagramStatus(brandId) {
+    return request(`/api/instagram/${brandId}/status`, { requiresAuth: true });
+  },
+  startInstagramConnection(brandId) {
+    return request(`/api/instagram/${brandId}/connect`, {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify({ returnPath: "/settings" })
+    });
+  },
+  disconnectInstagram(brandId) {
+    return request(`/api/instagram/${brandId}/connection`, {
+      requiresAuth: true,
+      method: "DELETE"
+    });
+  },
+  sendInstagramMessage(brandId, customerId, text) {
+    return request(`/api/instagram/${brandId}/send`, {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify({ customerId, text })
+    });
+  },
   getAnalytics(brandId, days = 30) {
     return request(`/api/analytics/${brandId}?days=${days}`, { requiresAuth: true });
   },
