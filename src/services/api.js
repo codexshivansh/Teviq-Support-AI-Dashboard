@@ -221,12 +221,15 @@ export const api = {
   getAnalytics(brandId, days = 30) {
     return request(`/api/analytics/${brandId}?days=${days}`, { requiresAuth: true });
   },
-  getConversations(brandId, days = 30) {
-    return request(`/api/conversations/${brandId}?days=${days}`, { requiresAuth: true });
+  getConversations(brandId, days = null) {
+    const timeFilter = days ? `?days=${days}` : "";
+    return request(`/api/conversations/${brandId}${timeFilter}`, { requiresAuth: true });
   },
   // Get conversations filtered by channel ('widget' | 'whatsapp' | 'instagram')
-  getConversationsByChannel(brandId, channel, days = 30) {
-    return request(`/api/conversations/${brandId}?channel=${channel}&days=${days}`, { requiresAuth: true });
+  getConversationsByChannel(brandId, channel, days = null) {
+    const params = new URLSearchParams({ channel });
+    if (days) params.set("days", String(days));
+    return request(`/api/conversations/${brandId}?${params.toString()}`, { requiresAuth: true });
   },
   // Send a manual WhatsApp message from the dashboard
   sendWhatsAppMessage(brandId, to, text) {
