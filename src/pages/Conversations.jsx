@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bot, ChevronDown, Globe2, Inbox, Instagram, Loader2, MessageCircle, Search, Send, UserRound, X } from "lucide-react";
 import { Card } from "../components/Card";
 import { EmptyState, ErrorState, LoadingState } from "../components/States";
 import { api } from "../services/api";
 import { formatPhone, getInitials } from "../lib/formatPhone";
+import { startConversationPolling } from "../services/conversationPolling";
 
 // "resolved" deliberately isn't a filter option here — chat_logs has no
 // explicit resolution signal (see backend/services/conversations.service.js
@@ -59,7 +60,7 @@ function messageSender(message) {
 }
 
 // Meta's real customer-service window is 24h; matches the backend's
-// WHATSAPP_WINDOW_MS conservative 23h buffer in routes/whatsapp.routes.js
+// conservative 23h limit in backend/services/customerReplyWindow.service.js
 // so the dashboard's "window open/closed" indicator agrees with what the
 // send endpoint will actually accept.
 const WHATSAPP_WINDOW_MS = 23 * 60 * 60 * 1000;
@@ -171,7 +172,7 @@ function getReplyWindowStatus(conversation, conversations, now, channel) {
     }, 0);
   if (!lastCustomerMessageAt) return { open: false };
   const elapsedMs = now - lastCustomerMessageAt;
-  return { open: elapsedMs < WHATSAPP_WINDOW_MS };
+  return { open: elapsedMs >= 0 && elapsedMs < WHATSAPP_WINDOW_MS };
 }
 
 export function Conversations({ brandId, onBrandChange }) {
@@ -187,6 +188,7 @@ export function Conversations({ brandId, onBrandChange }) {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
   const [now, setNow] = useState(() => Date.now());
+  const sendRevision = useRef(0);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 60 * 1000);
@@ -194,25 +196,22 @@ export function Conversations({ brandId, onBrandChange }) {
   }, []);
 
   useEffect(() => {
-    let active = true;
     setLoading(true);
     setError("");
-    const fetchPromise =
-      channelTab === "all" ? api.getConversations(brandId) : api.getConversationsByChannel(brandId, channelTab);
-    fetchPromise
-      .then((result) => {
-        if (active) setAllConversations(result?.conversations || []);
-      })
-      .catch((err) => {
-        if (active) setError(err.message);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
+    return startConversationPolling({
+      load: () => channelTab === "all" ? api.getConversations(brandId) : api.getConversationsByChannel(brandId, channelTab),
+      getRevision: () => sendRevision.current,
+      onData: (result) => {
+        const incoming = result?.conversations || [];
+        setAllConversations(incoming);
+        // Keep the chosen thread stable when another customer messages.
+        setSelectedId((previous) => previous === undefined ? incoming[0]?.id : previous);
+        setNow(Date.now());
+        setError("");
+      },
+      onInitialError: (err) => setError(err.message),
+      onInitialComplete: () => setLoading(false)
+    });
   }, [brandId, channelTab]);
 
   const conversations = useMemo(() => {
@@ -247,6 +246,7 @@ export function Conversations({ brandId, onBrandChange }) {
     if (!selected || !textToSend || sending) return;
 
     setSending(true);
+    sendRevision.current += 1;
     setSendError("");
     try {
       if (selected.channel === "whatsapp") {
@@ -273,6 +273,7 @@ export function Conversations({ brandId, onBrandChange }) {
     } catch (err) {
       setSendError(err.message || "Failed to send message.");
     } finally {
+      sendRevision.current += 1;
       setSending(false);
     }
   }
