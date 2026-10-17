@@ -33,10 +33,20 @@ function intentLabel(intent) {
 }
 
 function customerLabel(conversation) {
+  if (conversation.channel === "instagram") {
+    if (conversation.customerUsername) return `@${conversation.customerUsername}`;
+    if (conversation.customerName) return conversation.customerName;
+    if (conversation.customer && conversation.customer !== conversation.customerId) return conversation.customer;
+    return "Instagram user";
+  }
   return formatPhone(conversation.customer || conversation.customerId);
 }
 
 function customerInitials(conversation) {
+  if (conversation.channel === "instagram") {
+    const name = conversation.customerUsername || conversation.customerName;
+    return name ? getInitials(name, "IG") : "IG";
+  }
   const customer = conversation.customer || "";
   const isPhoneNumber = /^91\d{10}$/.test(customer.replace(/\D/g, ""));
   return getInitials(isPhoneNumber ? "" : customer, conversation.customerId);
@@ -413,7 +423,7 @@ export function Conversations({ brandId, onBrandChange }) {
                   <div className="mt-3 flex items-center gap-2">
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium capitalize text-slate-500 dark:bg-white/10 dark:text-slate-400">{intentLabel(selected.intent)}</span>
                     {selected.channel === "whatsapp" && selected.status === "escalated" ? <StatusPill status="escalated" /> : null}
-                    {selected.customerId && customerLabel(selected) !== formatPhone(selected.customerId) ? <span className="truncate text-[11px] text-slate-400">{formatPhone(selected.customerId)}</span> : null}
+                    {selected.channel !== "instagram" && selected.customerId && customerLabel(selected) !== formatPhone(selected.customerId) ? <span className="truncate text-[11px] text-slate-400">{formatPhone(selected.customerId)}</span> : null}
                   </div>
                 </div>
 
