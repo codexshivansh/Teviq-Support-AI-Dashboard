@@ -4,7 +4,7 @@ import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 
-const WIDGET_URL = "https://teviq-support-ai-widget.vercel.app/v1.0.0/widget.js";
+import { WIDGET_URL } from "../data/widget";
 const API_URL = "https://teviq-support-ai-backend.onrender.com";
 
 function StepList({ title, steps }) {
@@ -162,9 +162,9 @@ export function WidgetInstall({ brandId, onBrandChange }) {
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {[
             "Widget launcher appears on desktop and mobile.",
-            "Brand name and theme load correctly.",
+            "Teviq AI Assistant header and welcome message load correctly.",
             "A message reaches the live backend.",
-            "Order tracking asks for or accepts an order ID.",
+            "Quick actions send the selected question; desktop edges resize the panel.",
             "Human support flow asks for contact details.",
             "No console errors from blocked scripts."
           ].map((item) => (

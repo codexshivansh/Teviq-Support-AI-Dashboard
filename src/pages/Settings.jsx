@@ -8,6 +8,8 @@ import { getBrand } from "../data/brands";
 import { useBrands } from "../hooks/useBrands";
 import { api } from "../services/api";
 import { useTeviqAuth } from "../auth/AuthContext";
+import { DEFAULT_WELCOME_MESSAGE, DEFAULT_QUICK_ACTIONS } from "../data/widget";
+import { BrainCircuit, ChevronRight, Send, X } from "lucide-react";
 
 const ESCALATION_RULES = ["Fraud/legal/police keywords", "Abusive language", "Medical allergy or safety complaint"];
 
@@ -18,10 +20,10 @@ function toSettingsState(brand, saved) {
     themeColor: saved.themeColor || brand.themeColor || "#0f172a",
     supportPhone: saved.supportPhone || "",
     supportEmail: saved.supportEmail || "",
-    welcomeMessage: saved.welcomeMessage || `Hi, welcome to ${brand.name} support. How can I help?`,
+    welcomeMessage: saved.welcomeMessage || DEFAULT_WELCOME_MESSAGE,
     quickActions: saved.quickActions?.length
       ? saved.quickActions
-      : ["Track my order", "Return / Exchange", "Shipping & Delivery", "Talk to Support"],
+      : [...DEFAULT_QUICK_ACTIONS],
     businessHours: saved.businessHours || ""
   };
 }
@@ -360,7 +362,7 @@ export function Settings({ brandId, onBrandChange }) {
               <Button variant="secondary" onClick={loadSettings} disabled={saving}>
                 Discard changes
               </Button>
-              {saved ? <span className="text-sm font-semibold text-emerald-600">Saved. The live widget now uses these values.</span> : null}
+              {saved ? <span className="text-sm font-semibold text-emerald-600">Saved. Refresh your website to load the settings. Site-level overrides take priority.</span> : null}
               {saveError ? <span className="text-sm font-semibold text-rose-600">{saveError}</span> : null}
             </div>
           </Card>
@@ -368,23 +370,33 @@ export function Settings({ brandId, onBrandChange }) {
 
         <div className="space-y-5">
           <Card>
-            <p className="text-sm font-semibold text-ink">Widget theme preview</p>
-            <div className="mt-5 overflow-hidden rounded-[28px] border border-line bg-white shadow-card">
-              <div className="p-5 text-white" style={{ background: settings.themeColor }}>
-                <p className="text-sm font-semibold">{settings.brandName}</p>
-                <p className="mt-1 text-xs opacity-80">Online support · {settings.industry}</p>
+            <p className="text-sm font-semibold text-ink">Widget v1.2.0 preview</p>
+            <p className="mt-2 text-xs text-muted">Desktop visitors can resize the widget by dragging its edges. Their chosen size is saved in their browser.</p>
+            <div className="mt-5 overflow-hidden rounded-[26px] border border-[#eeece8] bg-[#fffefa] text-[#211f1c] shadow-card">
+              <div className="flex items-center gap-3 border-b border-[#eeece8] p-5">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#191816] text-white"><BrainCircuit className="h-6 w-6" /></span>
+                <div className="flex-1">
+                  <p className="font-serif text-lg font-semibold">Teviq AI Assistant</p>
+                  <p className="mt-1 flex items-center gap-2 text-xs text-[#77736d]"><span className="h-2 w-2 rounded-full bg-emerald-600" />Available now</p>
+                </div>
+                <X className="h-4 w-4" aria-hidden="true" />
               </div>
               <div className="p-5">
-                <p className="rounded-3xl bg-slate-100 p-4 text-sm leading-6 text-slate-700">
+                <h3 className="font-serif text-3xl">Welcome!</h3>
+                <p className="mt-2 font-serif text-xl leading-relaxed text-[#77736d]">
                   {settings.welcomeMessage}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {settings.quickActions.map((action) => (
-                    <span key={action} className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
-                      {action}
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  {settings.quickActions.map((action, index) => (
+                    <span key={index} className="flex min-h-16 items-center justify-between gap-2 rounded-2xl border border-[#e8e5df] p-3 text-sm">
+                      {action}<ChevronRight className="h-4 w-4 shrink-0 text-[#77736d]" />
                     </span>
                   ))}
                 </div>
+              </div>
+              <div className="border-t border-[#eeece8] p-4">
+                <div className="flex items-center justify-between rounded-full border border-[#e8e5df] px-4 py-3 text-sm text-[#77736d]">Type your question<Send className="h-4 w-4" style={{ color: settings.themeColor }} /></div>
+                <p className="mt-3 text-center text-xs text-[#77736d]">Powered by Teviq</p>
               </div>
             </div>
           </Card>
