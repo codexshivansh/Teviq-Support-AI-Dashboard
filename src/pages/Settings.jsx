@@ -20,6 +20,7 @@ function toSettingsState(brand, saved) {
     themeColor: saved.themeColor || brand.themeColor || "#0f172a",
     supportPhone: saved.supportPhone || "",
     supportEmail: saved.supportEmail || "",
+    welcomeTitle: saved.welcomeTitle || "Welcome!",
     welcomeMessage: saved.welcomeMessage || DEFAULT_WELCOME_MESSAGE,
     quickActions: saved.quickActions?.length
       ? saved.quickActions
@@ -153,6 +154,7 @@ export function Settings({ brandId, onBrandChange }) {
 
     try {
       const result = await api.updateBrandSettings(brandId, {
+        welcomeTitle: settings.welcomeTitle,
         welcomeMessage: settings.welcomeMessage,
         quickActions: settings.quickActions,
         supportPhone: settings.supportPhone,
@@ -297,6 +299,14 @@ export function Settings({ brandId, onBrandChange }) {
             </label>
 
             <label className="mt-4 block">
+              <span className="text-sm font-semibold text-ink">Welcome heading</span>
+              <input
+                value={settings.welcomeTitle}
+                onChange={(event) => update("welcomeTitle", event.target.value)}
+                className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink dark:bg-white/5"
+              />
+            </label>
+            <label className="mt-4 block">
               <span className="text-sm font-semibold text-ink">Welcome message</span>
               <textarea
                 value={settings.welcomeMessage}
@@ -382,7 +392,7 @@ export function Settings({ brandId, onBrandChange }) {
                 <X className="h-4 w-4" aria-hidden="true" />
               </div>
               <div className="p-5">
-                <h3 className="font-serif text-3xl">Welcome!</h3>
+                <h3 className="font-serif text-3xl">{settings.welcomeTitle}</h3>
                 <p className="mt-2 font-serif text-xl leading-relaxed text-[#77736d]">
                   {settings.welcomeMessage}
                 </p>
