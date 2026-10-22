@@ -87,6 +87,7 @@ export function WidgetInstall({ brandId, onBrandChange }) {
             <div>
               <p className="text-sm font-semibold text-ink">Production embed script</p>
               <p className="mt-1 text-sm text-muted">Selected brand ID: <span className="font-semibold text-ink">{brandId}</span></p>
+              <p className="mt-2 text-sm text-muted">Appearance controls require v1.3.0. Replace an older embed with this snippet once; future colour and layout changes are managed in Settings.</p>
             </div>
             <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
               <CheckCircle2 className="h-4 w-4" />
