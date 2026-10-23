@@ -27,6 +27,12 @@ const setupCopy = {
     page: "knowledge",
     icon: Database
   },
+  channels: {
+    title: "Connect Channels",
+    detail: "Set up Instagram messaging and WhatsApp inbox access for this workspace.",
+    page: "settings",
+    icon: MessageCircle
+  },
   playground: {
     title: "Test AI in Playground",
     detail: "Ask order, return and product questions before showing the widget live.",
@@ -196,6 +202,7 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
 
     return [
       { id: "knowledge", completed: completion.knowledge, ...setupCopy.knowledge },
+      { id: "channels", completed: completion.channels, ...setupCopy.channels },
       { id: "playground", completed: completion.playground, ...setupCopy.playground },
       { id: "install", completed: completion.install, ...setupCopy.install },
       { id: "live", completed: completion.live, ...setupCopy.live }
@@ -207,9 +214,10 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
 
   function openSetupStep(step) {
     const nextSetup = { ...localSetup };
+    if (step.id === "channels") nextSetup.channels = true;
     if (step.id === "playground") nextSetup.playground = true;
     if (step.id === "install") nextSetup.install = true;
-    if (step.id === "live" && completedSteps >= 3) nextSetup.live = true;
+    if (step.id === "live" && completedSteps >= 4) nextSetup.live = true;
     setLocalSetup(nextSetup);
     saveLocalSetupFlags(brandId, nextSetup);
     onNavigate?.(step.page);
@@ -364,7 +372,7 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
           </ol>
           <button
             type="button"
-            onClick={() => openSetupStep(setupSteps.find((step) => !step.completed) || setupSteps[3])}
+            onClick={() => openSetupStep(setupSteps.find((step) => !step.completed) || setupSteps[4])}
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-950/15"
           >
             Continue setup

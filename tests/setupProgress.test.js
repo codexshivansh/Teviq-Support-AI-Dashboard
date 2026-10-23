@@ -5,11 +5,12 @@ import { getSetupCompletion } from "../src/lib/setupProgress.js";
 test("marks AI Live only after prerequisites and explicit live confirmation", () => {
   const ready = {
     knowledge: { stats: { documentCount: 1 } },
-    localSetup: { playground: true, install: true, live: true }
+    localSetup: { channels: true, playground: true, install: true, live: true }
   };
 
   assert.deepEqual(getSetupCompletion(ready), {
     knowledge: true,
+    channels: true,
     playground: true,
     install: true,
     live: true
@@ -18,7 +19,7 @@ test("marks AI Live only after prerequisites and explicit live confirmation", ()
   assert.equal(
     getSetupCompletion({
       ...ready,
-      localSetup: { playground: true, install: true, live: false }
+      localSetup: { channels: true, playground: true, install: true, live: false }
     }).live,
     false
   );
@@ -27,7 +28,7 @@ test("marks AI Live only after prerequisites and explicit live confirmation", ()
 test("marks AI Live only after knowledge, playground, install and explicit live confirmation", () => {
   const completion = getSetupCompletion({
     knowledge: { stats: { documentCount: 1 } },
-    localSetup: { playground: true, install: true, live: true }
+    localSetup: { channels: true, playground: true, install: true, live: true }
   });
 
   assert.equal(completion.live, true);
