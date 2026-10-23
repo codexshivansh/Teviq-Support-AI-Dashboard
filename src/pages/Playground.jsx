@@ -6,13 +6,6 @@ import { Button } from "../components/Button";
 import { ErrorState } from "../components/States";
 import { api } from "../services/api";
 
-const examples = [
-  "Track order UG-SH-7001",
-  "Suggest earbuds for calls",
-  "Do you support COD?",
-  "Can I return my order?"
-];
-
 export function Playground({ brandId, onBrandChange }) {
   const [message, setMessage] = useState("Suggest earbuds for calls");
   const [response, setResponse] = useState(null);
@@ -62,19 +55,6 @@ export function Playground({ brandId, onBrandChange }) {
             className="mt-3 w-full resize-none rounded-3xl border border-line bg-white/80 p-4 text-sm leading-6 text-ink outline-none transition focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
             placeholder="Ask about orders, returns, shipping, products..."
           />
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {examples.map((example) => (
-              <button
-                key={example}
-                onClick={() => submit(example)}
-                disabled={loading}
-                className="rounded-full border border-line bg-white/75 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-ink focus:outline-none focus:ring-4 focus:ring-slate-950/10 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-ink"
-              >
-                {example}
-              </button>
-            ))}
-          </div>
 
           <Button className="mt-5 w-full" onClick={() => submit()} disabled={loading || !message.trim()}>
             <Send className="h-4 w-4" />
