@@ -10,9 +10,9 @@ export function WidgetPreview({ settings }) {
     observer.observe(host.current);
     return () => observer.disconnect();
   }, []);
-  const width = mobile ? 390 : 720;
-  const height = mobile ? 780 : 980;
-  const scale = Math.min(1, availableWidth / width);
+  const width = mobile ? 390 : 680;
+  const height = mobile ? 640 : 780;
+  const scale = Math.min(1, availableWidth / width, 560 / height);
   const config = JSON.stringify({
     brandName: settings.brandName, themeColor: settings.themeColor,
     welcomeTitle: settings.welcomeTitle, welcomeBody: settings.welcomeMessage,
