@@ -34,7 +34,8 @@ export function WidgetAppearanceEditor({ value, onChange, inputPlaceholder, onPl
     </div>
     {[["radius", "Corner radius", 0, 40], ["width", "Desktop width", 320, 600], ["height", "Desktop height", 420, 850]].map(([key, label, min, max]) => <label key={key} className="block text-sm text-ink">{label}: {value[key]}px<input aria-label={label} type="range" min={min} max={max} value={value[key]} onChange={e => update(key, Number(e.target.value))} className="mt-2 w-full" /></label>)}
     <p className="text-xs text-muted">On mobile the panel fills the screen. Visitors’ saved sizes take priority until the default size or position changes.</p>
-    {[["allowResize", "Allow visitors to resize"], ["showBranding", "Show Powered by Teviq"]].map(([key, label]) => <label key={key} className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" checked={value[key]} onChange={e => update(key, e.target.checked)} />{label}</label>)}
+    <p className="text-xs text-muted">Powered by Teviq is always shown.</p>
+    <label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" checked={value.allowResize} onChange={e => update("allowResize", e.target.checked)} />Allow visitors to resize</label>
     <button type="button" className="text-sm font-semibold text-ink underline" onClick={() => onChange({ ...DEFAULT_APPEARANCE })}>Reset appearance to creamy defaults</button>
   </div>;
 }

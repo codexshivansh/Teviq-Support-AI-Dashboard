@@ -19,7 +19,7 @@ function toSettingsState(brand, saved) {
     brandName: brand.name,
     industry: brand.industry,
     themeColor: saved.themeColor || brand.themeColor || "#0f172a",
-    appearance: { ...DEFAULT_APPEARANCE, ...(saved.appearance || {}) },
+    appearance: { ...DEFAULT_APPEARANCE, ...(saved.appearance || {}), showBranding: true },
     inputPlaceholder: saved.inputPlaceholder || "Type your question",
     supportPhone: saved.supportPhone || "",
     supportEmail: saved.supportEmail || "",
@@ -172,7 +172,7 @@ export function Settings({ brandId, onBrandChange }) {
         supportEmail: settings.supportEmail,
         businessHours: settings.businessHours,
         themeColor: settings.themeColor,
-        appearance: settings.appearance,
+        appearance: { ...settings.appearance, showBranding: true },
         inputPlaceholder: settings.inputPlaceholder
       });
       const brand = getBrand(brandId, brands);
