@@ -30,7 +30,7 @@ export function WidgetAppearanceEditor({ value, onChange, inputPlaceholder, onPl
     <label className="block text-sm text-ink">Input placeholder<input className={inputClass} maxLength={120} value={inputPlaceholder} onChange={e => onPlaceholderChange(e.target.value)} /></label>
     <div className="grid grid-cols-2 gap-3">
       <label className="text-sm text-ink">Heading font<select className={inputClass} value={value.font} onChange={e => update("font", e.target.value)}><option value="serif">Classic serif</option><option value="sans">Modern sans-serif</option></select></label>
-      <label className="text-sm text-ink">Position<select className={inputClass} value={value.position} onChange={e => update("position", e.target.value)}><option value="bottom-right">Bottom right</option><option value="bottom-left">Bottom left</option></select></label>
+      <label className="text-sm text-ink">Position of widget<select className={inputClass} value={value.position} onChange={e => update("position", e.target.value)}><option value="bottom-right">Bottom right</option><option value="bottom-left">Bottom left</option></select></label>
     </div>
     {[["radius", "Corner radius", 0, 40], ["width", "Desktop width", 320, 600], ["height", "Desktop height", 420, 850]].map(([key, label, min, max]) => <label key={key} className="block text-sm text-ink">{label}: {value[key]}px<input aria-label={label} type="range" min={min} max={max} value={value[key]} onChange={e => update(key, Number(e.target.value))} className="mt-2 w-full" /></label>)}
     <p className="text-xs text-muted">On mobile the panel fills the screen. Visitors’ saved sizes take priority until the default size or position changes.</p>
