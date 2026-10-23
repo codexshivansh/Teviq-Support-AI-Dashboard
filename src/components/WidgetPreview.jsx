@@ -21,7 +21,7 @@ export function WidgetPreview({ settings }) {
   return <div>
     <p className="font-semibold text-ink">Widget preview</p>
     <div className="mt-3 flex justify-center">
-      <section aria-label="Widget preview" className="flex h-[360px] max-h-full min-h-0 flex-col overflow-hidden border shadow-[0_12px_32px_rgba(15,23,42,0.18)]" style={{ ...style, borderRadius: `var(--preview-radius)`, borderColor: "var(--preview-line)", background: "var(--preview-surface)" }}>
+      <section aria-label="Widget preview" className="flex flex-col overflow-hidden border shadow-[0_12px_32px_rgba(15,23,42,0.18)]" style={{ ...style, borderRadius: `var(--preview-radius)`, borderColor: "var(--preview-line)", background: "var(--preview-surface)" }}>
         <header className="flex h-[56px] shrink-0 items-center gap-2.5 border-b px-3" style={{ background: "var(--preview-header)", borderColor: "var(--preview-line)" }}>
           <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-xl" style={{ color: "var(--preview-accent)", background: "color-mix(in srgb, var(--preview-accent) 10%, white)" }}>
             {appearance.logoUrl ? <img src={appearance.logoUrl} alt="" className="h-full w-full object-contain" onError={event => { event.currentTarget.style.display = "none"; }} /> : <Bot className="h-5 w-5" />}
@@ -33,7 +33,7 @@ export function WidgetPreview({ settings }) {
           <button type="button" aria-label="Close preview" className="grid h-7 w-7 shrink-0 place-items-center rounded-full" style={{ background: "var(--preview-bubble)", color: "var(--preview-ink)" }}><X className="h-3.5 w-3.5" /></button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-hidden px-3.5 py-3">
+        <div className="px-3.5 py-3">
           <h3 className="text-[25px] font-medium leading-[1.05] tracking-tight" style={{ color: "var(--preview-ink)" }}>{settings.welcomeTitle || "Welcome!"}</h3>
           <p className="mt-1.5 text-[13px] leading-[1.4]" style={{ color: "var(--preview-muted)" }}>{settings.welcomeMessage || "Ask me about our products, services, pricing, or anything else you’re curious about."}</p>
           <div className="mt-3 grid grid-cols-2 gap-1.5 font-sans">
