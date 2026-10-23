@@ -401,9 +401,9 @@ export function Settings({ brandId, onBrandChange }) {
         </div>
 
         <div className="space-y-5">
-          <Card className="mx-auto w-fit max-w-full">
+          <div className="mx-auto w-fit max-w-full">
             <WidgetPreview settings={settings} />
-          </Card>
+          </div>
 
           <Card>
             <div className="flex items-center gap-3">
@@ -453,7 +453,7 @@ export function Settings({ brandId, onBrandChange }) {
             </header>
             <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto p-5 sm:p-7 xl:grid-cols-[0.9fr_1.1fr]">
               <WidgetAppearanceEditor value={settings.appearance} onChange={value => update("appearance", value)} inputPlaceholder={settings.inputPlaceholder} onPlaceholderChange={value => update("inputPlaceholder", value)} />
-              <div className="xl:sticky xl:top-0 xl:self-start"><WidgetPreview settings={settings} /></div>
+              <div className="mx-auto w-fit max-w-full xl:sticky xl:top-0 xl:self-start"><WidgetPreview settings={settings} /></div>
             </div>
             <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4 sm:px-7">
               <span className="text-xs text-muted">Edits stay as a draft until you save.</span>
