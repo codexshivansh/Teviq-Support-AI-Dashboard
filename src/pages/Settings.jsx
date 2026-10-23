@@ -446,16 +446,16 @@ export function Settings({ brandId, onBrandChange }) {
       ) : null}
       {customizationOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) setCustomizationOpen(false); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="widget-customization-title" className="flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-line bg-page shadow-2xl">
-            <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-7">
+          <section role="dialog" aria-modal="true" aria-labelledby="widget-customization-title" className="widget-customization-dialog flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl">
+            <header className="flex items-center justify-between gap-4 border-b px-5 py-4 sm:px-7">
               <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">{settings.brandName}</p><h2 id="widget-customization-title" className="mt-1 text-xl font-bold text-ink">Customize your widget</h2></div>
               <button type="button" aria-label="Close customization" onClick={() => setCustomizationOpen(false)} className="rounded-xl p-2 text-muted hover:bg-white/70"><X className="h-5 w-5" /></button>
             </header>
-            <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto p-5 sm:p-7 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="widget-customization-content grid min-h-0 flex-1 gap-6 overflow-y-auto p-5 sm:p-7 xl:grid-cols-[0.9fr_1.1fr]">
               <WidgetAppearanceEditor value={settings.appearance} onChange={value => update("appearance", value)} inputPlaceholder={settings.inputPlaceholder} onPlaceholderChange={value => update("inputPlaceholder", value)} />
               <div className="mx-auto w-fit max-w-full xl:sticky xl:top-0 xl:self-start"><WidgetPreview settings={settings} /></div>
             </div>
-            <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4 sm:px-7">
+            <footer className="widget-customization-footer flex flex-wrap items-center justify-between gap-3 border-t px-5 py-4 sm:px-7">
               <span className="text-xs text-muted">Edits stay as a draft until you save.</span>
               <div className="flex gap-2"><Button variant="secondary" onClick={() => setCustomizationOpen(false)}>Close</Button><Button onClick={async () => { if (await save()) setCustomizationOpen(false); }} disabled={saving}>{saving ? "Saving..." : "Save customization"}</Button></div>
             </footer>

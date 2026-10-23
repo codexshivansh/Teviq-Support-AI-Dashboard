@@ -1,6 +1,6 @@
 import { DEFAULT_APPEARANCE } from "../data/widget";
 
-const inputClass = "mt-2 w-full min-w-0 rounded-xl border border-line bg-white/80 px-3 py-2 text-sm text-ink dark:bg-white/5";
+const inputClass = "widget-customization-control mt-2 w-full min-w-0 rounded-xl px-3 py-2 text-sm text-ink";
 const presets = {
   Cream: DEFAULT_APPEARANCE,
   Ocean: { backgroundColor: "#f5faff", headerColor: "#e6f2ff", textColor: "#102a43", mutedColor: "#486581", borderColor: "#bccfe0", botBubbleColor: "#e6f2ff" },
@@ -12,11 +12,11 @@ export function WidgetAppearanceEditor({ value, onChange, inputPlaceholder, onPl
   const update = (key, item) => onChange({ ...value, [key]: item });
   return <div className="mt-6 space-y-5 border-t border-line pt-5">
     <div><h3 className="font-semibold text-ink">Make it yours</h3><p className="mt-1 text-xs text-muted">Changes apply only to this workspace after saving. New installations use the creamy default.</p></div>
-    <div className="flex flex-wrap gap-2">{Object.entries(presets).map(([name, preset]) => <button key={name} type="button" className="rounded-full border border-line px-3 py-2 text-xs font-semibold text-ink" onClick={() => {
+    <div className="flex flex-wrap gap-3">{Object.entries(presets).map(([name, preset]) => <button key={name} type="button" className="widget-customization-preset rounded-full px-3 py-2 text-xs font-semibold text-ink" onClick={() => {
       const colors = Object.fromEntries(Object.entries(preset).filter(([key]) => key.endsWith("Color")));
       onChange({ ...value, ...colors });
     }}>{name}</button>)}</div>
-    <div className="grid grid-cols-2 gap-3">{Object.entries({ backgroundColor: "Background", headerColor: "Header background", textColor: "Text", mutedColor: "Secondary text", borderColor: "Borders", botBubbleColor: "Assistant replies" }).map(([key, label]) => <label key={key} className="text-sm text-ink">{label}<div className="mt-2 flex items-center gap-2"><input aria-label={label} type="color" value={value[key]} onChange={e => update(key, e.target.value)} className="h-10 w-12 rounded border border-line" /><span className="text-xs text-muted">{value[key]}</span></div></label>)}</div>
+    <div className="grid grid-cols-2 gap-3">{Object.entries({ backgroundColor: "Background", headerColor: "Header background", textColor: "Text", mutedColor: "Secondary text", borderColor: "Borders", botBubbleColor: "Assistant replies" }).map(([key, label]) => <label key={key} className="text-sm text-ink">{label}<div className="mt-2 flex items-center gap-2"><input aria-label={label} type="color" value={value[key]} onChange={e => update(key, e.target.value)} className="widget-customization-color h-10 w-12 rounded-xl" /><span className="text-xs text-muted">{value[key]}</span></div></label>)}</div>
     {[["headerTitle", "Assistant name"], ["statusText", "Status text"], ["logoUrl", "Logo image URL (HTTPS)"]].map(([key, label]) => <label key={key} className="block text-sm text-ink">{label}<input className={inputClass} maxLength={key === "logoUrl" ? 2048 : 80} type={key === "logoUrl" ? "url" : "text"} value={value[key]} onChange={e => update(key, e.target.value)} /></label>)}
     <p className="text-xs text-muted">Leave the logo blank to use the brain icon. Use a public HTTPS image URL.</p>
     <label className="block text-sm text-ink">Input placeholder<input className={inputClass} maxLength={120} value={inputPlaceholder} onChange={e => onPlaceholderChange(e.target.value)} /></label>

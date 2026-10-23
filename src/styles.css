@@ -104,3 +104,72 @@ button {
   border-radius: 999px;
   background: rgba(100, 116, 139, 0.22);
 }
+
+.widget-customization-dialog {
+  --custom-surface: #edf0f5;
+  --custom-shadow: #d0d5df;
+  --custom-highlight: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  background: var(--custom-surface);
+  box-shadow: 18px 18px 42px var(--custom-shadow), -18px -18px 42px var(--custom-highlight);
+}
+
+.dark .widget-customization-dialog {
+  --custom-surface: #1e293b;
+  --custom-shadow: #111a29;
+  --custom-highlight: #2c3a50;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.widget-customization-dialog > header,
+.widget-customization-dialog > footer {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: var(--custom-surface);
+}
+
+.widget-customization-content {
+  background: var(--custom-surface);
+}
+
+.widget-customization-control,
+.widget-customization-color {
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: var(--custom-surface);
+  box-shadow: inset 4px 4px 8px var(--custom-shadow), inset -4px -4px 8px var(--custom-highlight);
+}
+
+.widget-customization-control:focus {
+  outline: 2px solid rgba(20, 184, 166, 0.45);
+  outline-offset: 2px;
+}
+
+.widget-customization-color {
+  padding: 5px;
+}
+
+.widget-customization-preset {
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: var(--custom-surface);
+  box-shadow: 5px 5px 10px var(--custom-shadow), -5px -5px 10px var(--custom-highlight);
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.widget-customization-preset:hover {
+  transform: translateY(-1px);
+  box-shadow: 7px 7px 13px var(--custom-shadow), -7px -7px 13px var(--custom-highlight);
+}
+
+.widget-customization-preset:active {
+  box-shadow: inset 3px 3px 6px var(--custom-shadow), inset -3px -3px 6px var(--custom-highlight);
+}
+
+.widget-customization-content input[type="range"],
+.widget-customization-content input[type="checkbox"] {
+  accent-color: #0f766e;
+}
+
+.dark .widget-customization-control,
+.dark .widget-customization-color,
+.dark .widget-customization-preset {
+  border-color: rgba(255, 255, 255, 0.06);
+}
