@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Instagram, Loader2, Palette, Phone, Store, Unplug } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, Instagram, Loader2, Palette, Phone, Store, Unplug, X } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
@@ -41,11 +41,19 @@ export function Settings({ brandId, onBrandChange }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [customizationOpen, setCustomizationOpen] = useState(false);
   const [instagramStatus, setInstagramStatus] = useState(null);
   const [instagramLoading, setInstagramLoading] = useState(true);
   const [instagramBusy, setInstagramBusy] = useState(false);
   const [instagramError, setInstagramError] = useState("");
   const [instagramNotice, setInstagramNotice] = useState(null);
+
+  useEffect(() => {
+    if (!customizationOpen) return undefined;
+    const closeOnEscape = event => { if (event.key === "Escape") setCustomizationOpen(false); };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [customizationOpen]);
 
   const loadInstagramStatus = useCallback(async () => {
     if (!brandId) return;
@@ -170,8 +178,10 @@ export function Settings({ brandId, onBrandChange }) {
       const brand = getBrand(brandId, brands);
       setSettings(toSettingsState(brand, result?.settings || {}));
       setSaved(true);
+      return true;
     } catch (err) {
       setSaveError(err.message);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -337,7 +347,10 @@ export function Settings({ brandId, onBrandChange }) {
           </Card>
 
           <Card>
-            <WidgetAppearanceEditor value={settings.appearance} onChange={value => update("appearance", value)} inputPlaceholder={settings.inputPlaceholder} onPlaceholderChange={value => update("inputPlaceholder", value)} />
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div><p className="text-sm font-semibold text-ink">Detailed widget customization</p><p className="mt-1 text-sm text-muted">Personalize colours, logo, layout and more for this workspace.</p></div>
+              <Button variant="secondary" onClick={() => setCustomizationOpen(true)}><Palette className="h-4 w-4" />Customize widget</Button>
+            </div>
           </Card>
 
           <Card>
@@ -381,7 +394,7 @@ export function Settings({ brandId, onBrandChange }) {
               <Button variant="secondary" onClick={loadSettings} disabled={saving}>
                 Discard changes
               </Button>
-              {saved ? <span className="text-sm font-semibold text-emerald-600">Saved. Refresh your website to load the settings. Site-level overrides take priority.</span> : null}
+              {saved ? <span className="text-sm font-semibold text-emerald-600">Saved. Your website widget uses these settings automatically.</span> : null}
               {saveError ? <span className="text-sm font-semibold text-rose-600">{saveError}</span> : null}
             </div>
           </Card>
@@ -430,6 +443,24 @@ export function Settings({ brandId, onBrandChange }) {
           </Card>
         </div>
       </div>
+      ) : null}
+      {customizationOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) setCustomizationOpen(false); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="widget-customization-title" className="flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-line bg-page shadow-2xl">
+            <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-7">
+              <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">{settings.brandName}</p><h2 id="widget-customization-title" className="mt-1 text-xl font-bold text-ink">Customize your widget</h2></div>
+              <button type="button" aria-label="Close customization" onClick={() => setCustomizationOpen(false)} className="rounded-xl p-2 text-muted hover:bg-white/70"><X className="h-5 w-5" /></button>
+            </header>
+            <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto p-5 sm:p-7 xl:grid-cols-[0.9fr_1.1fr]">
+              <WidgetAppearanceEditor value={settings.appearance} onChange={value => update("appearance", value)} inputPlaceholder={settings.inputPlaceholder} onPlaceholderChange={value => update("inputPlaceholder", value)} />
+              <div className="xl:sticky xl:top-0 xl:self-start"><WidgetPreview settings={settings} /></div>
+            </div>
+            <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4 sm:px-7">
+              <span className="text-xs text-muted">Edits stay as a draft until you save.</span>
+              <div className="flex gap-2"><Button variant="secondary" onClick={() => setCustomizationOpen(false)}>Close</Button><Button onClick={async () => { if (await save()) setCustomizationOpen(false); }} disabled={saving}>{saving ? "Saving..." : "Save customization"}</Button></div>
+            </footer>
+          </section>
+        </div>
       ) : null}
     </>
   );
