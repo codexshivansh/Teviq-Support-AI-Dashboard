@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { DEFAULT_APPEARANCE } from "../data/widget";
 
 const inputClass = "widget-customization-control mt-2 w-full min-w-0 rounded-xl px-3 py-2 text-sm text-ink";
@@ -9,14 +10,21 @@ const presets = {
 };
 
 export function WidgetAppearanceEditor({ value, onChange, inputPlaceholder, onPlaceholderChange }) {
+  const colorPickerScroll = useRef(null);
   const update = (key, item) => onChange({ ...value, [key]: item });
+  const keepPickerPosition = () => {
+    const saved = colorPickerScroll.current;
+    if (!saved) return;
+    if (saved.scroller) saved.scroller.scrollTop = saved.scrollTop;
+    window.scrollTo(saved.windowX, saved.windowY);
+  };
   return <div className="mt-6 space-y-5 border-t border-line pt-5">
     <div><h3 className="font-semibold text-ink">Make it yours</h3><p className="mt-1 text-xs text-muted">Changes apply only to this workspace after saving. New installations use the creamy default.</p></div>
     <div className="flex flex-wrap gap-3">{Object.entries(presets).map(([name, preset]) => <button key={name} type="button" className="widget-customization-preset rounded-full px-3 py-2 text-xs font-semibold text-ink" onClick={() => {
       const colors = Object.fromEntries(Object.entries(preset).filter(([key]) => key.endsWith("Color")));
       onChange({ ...value, ...colors });
     }}>{name}</button>)}</div>
-    <div className="grid grid-cols-2 gap-3">{Object.entries({ backgroundColor: "Background", headerColor: "Header background", textColor: "Text", mutedColor: "Secondary text", borderColor: "Borders", botBubbleColor: "Assistant replies" }).map(([key, label]) => <div key={key} className="text-sm text-ink"><span>{label}</span><div className="mt-2 flex items-center gap-2"><input aria-label={label} type="color" value={value[key]} onChange={e => { const scroller = e.currentTarget.closest(".widget-customization-content"); const scrollTop = scroller?.scrollTop ?? 0; update(key, e.target.value); requestAnimationFrame(() => { if (scroller && scroller.scrollTop !== scrollTop) scroller.scrollTop = scrollTop; }); }} className="widget-customization-color h-10 w-12 rounded-xl" /><span className="text-xs text-muted">{value[key]}</span></div></div>)}</div>
+    <div className="grid grid-cols-2 gap-3">{Object.entries({ backgroundColor: "Background", headerColor: "Header background", textColor: "Text", mutedColor: "Secondary text", borderColor: "Borders", botBubbleColor: "Assistant replies" }).map(([key, label]) => <div key={key} className="text-sm text-ink"><span>{label}</span><div className="mt-2 flex items-center gap-2"><input aria-label={label} type="color" value={value[key]} onMouseDown={event => { const input = event.currentTarget; colorPickerScroll.current = { scroller: input.closest(".widget-customization-content"), scrollTop: input.closest(".widget-customization-content")?.scrollTop ?? 0, windowX: window.scrollX, windowY: window.scrollY }; if (input.showPicker) { event.preventDefault(); input.focus({ preventScroll: true }); input.showPicker(); } }} onChange={event => { update(key, event.target.value); requestAnimationFrame(() => requestAnimationFrame(keepPickerPosition)); setTimeout(keepPickerPosition, 80); }} className="widget-customization-color h-10 w-12 rounded-xl" /><span className="text-xs text-muted">{value[key]}</span></div></div>)}</div>
     {[["headerTitle", "Assistant name"], ["statusText", "Status text"], ["logoUrl", "Logo image URL (HTTPS)"]].map(([key, label]) => <label key={key} className="block text-sm text-ink">{label}<input className={inputClass} maxLength={key === "logoUrl" ? 2048 : 80} type={key === "logoUrl" ? "url" : "text"} value={value[key]} onChange={e => update(key, e.target.value)} /></label>)}
     <p className="text-xs text-muted">Leave the logo blank to use the brain icon. Use a public HTTPS image URL.</p>
     <label className="block text-sm text-ink">Input placeholder<input className={inputClass} maxLength={120} value={inputPlaceholder} onChange={e => onPlaceholderChange(e.target.value)} /></label>
