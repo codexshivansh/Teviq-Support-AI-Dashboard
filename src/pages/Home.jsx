@@ -10,6 +10,7 @@ import {
   Instagram,
   MessageSquare,
   MessageCircle,
+  Globe2,
   Rocket
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -279,7 +280,17 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
           <p className="text-sm font-semibold text-ink">Messaging channels</p>
           <p className="mt-1 text-xs text-muted">Connect social channels and manage customer messages from one place.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Card>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-900 text-white"><Globe2 className="h-5 w-5" /></span>
+                <div><p className="text-sm font-semibold text-ink">Website Widget</p><p className="mt-1 text-xs leading-5 text-muted">Install Teviq AI support on your website and customize its appearance.</p></div>
+              </div>
+              <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Available</span>
+            </div>
+            <button type="button" onClick={() => onNavigate?.("widget-install")} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink hover:underline">Set up website widget <ArrowRight className="h-4 w-4" /></button>
+          </Card>
           <Card>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
