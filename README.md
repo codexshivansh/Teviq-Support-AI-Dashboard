@@ -56,7 +56,7 @@ The install page emits the immutable production widget release:
 
 ```html
 <script
-  src="https://teviq-support-ai-widget.vercel.app/v1.3.0/widget.js"
+  src="https://www.teviq.in/widget-v1.3.0.js"
   data-brand-id="CLIENT_BRAND_ID"
   data-api-url="https://teviq-support-ai-backend.onrender.com">
 </script>

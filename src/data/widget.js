@@ -1,4 +1,4 @@
-export const WIDGET_URL = "https://teviq-support-ai-widget.vercel.app/v1.3.0/widget.js";
+export const WIDGET_URL = "https://www.teviq.in/widget-v1.3.0.js";
 export const DEFAULT_APPEARANCE = {
   backgroundColor: "#fffefa", textColor: "#211f1c", mutedColor: "#77736d",
   headerColor: "#fffefa", borderColor: "#e8e5df", botBubbleColor: "#f5f3ef",
