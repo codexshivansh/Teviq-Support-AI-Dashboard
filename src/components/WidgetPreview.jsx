@@ -20,8 +20,7 @@ export function WidgetPreview({ settings }) {
 
   return <div>
     <p className="font-semibold text-ink">Widget preview</p>
-    <p className="mt-1 text-xs text-muted">A compact preview of your widget’s appearance.</p>
-    <div className="mt-4 flex min-h-[390px] items-end justify-center overflow-hidden rounded-2xl border border-line bg-[#e9e8e4] p-3 sm:p-4">
+    <div className="mt-3 flex justify-center">
       <section aria-label="Widget preview" className="flex h-[360px] max-h-full min-h-0 flex-col overflow-hidden border shadow-[0_12px_32px_rgba(15,23,42,0.18)]" style={{ ...style, borderRadius: `var(--preview-radius)`, borderColor: "var(--preview-line)", background: "var(--preview-surface)" }}>
         <header className="flex h-[56px] shrink-0 items-center gap-2.5 border-b px-3" style={{ background: "var(--preview-header)", borderColor: "var(--preview-line)" }}>
           <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-xl" style={{ color: "var(--preview-accent)", background: "color-mix(in srgb, var(--preview-accent) 10%, white)" }}>

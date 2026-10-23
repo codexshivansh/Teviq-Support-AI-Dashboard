@@ -401,7 +401,7 @@ export function Settings({ brandId, onBrandChange }) {
         </div>
 
         <div className="space-y-5">
-          <Card>
+          <Card className="mx-auto w-fit max-w-full">
             <WidgetPreview settings={settings} />
           </Card>
 
