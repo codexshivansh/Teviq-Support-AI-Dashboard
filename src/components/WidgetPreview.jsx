@@ -5,8 +5,8 @@ export function WidgetPreview({ settings }) {
   const appearance = settings.appearance || {};
   const width = Math.min(600, Math.max(320, Number(appearance.width) || 420));
   const height = Math.min(850, Math.max(420, Number(appearance.height) || 660));
-  // Keep the preview compact while preserving the embedded widget's proportions.
-  const scale = Math.min(1, 340 / width, 420 / height);
+  // Match the website widget dimensions without an extra preview card or canvas.
+  const scale = 1;
   const viewportWidth = Math.max(650, width + 24);
   const config = useMemo(() => JSON.stringify({
     brandName: settings.brandName,
