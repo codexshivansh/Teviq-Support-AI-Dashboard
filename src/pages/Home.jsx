@@ -7,9 +7,10 @@ import {
   Clock3,
   Code2,
   Database,
+  Instagram,
   MessageSquare,
-  Rocket,
-  ShoppingBag
+  MessageCircle,
+  Rocket
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { PageHeader } from "../components/PageHeader";
@@ -17,7 +18,7 @@ import { Card, MetricCard } from "../components/Card";
 import { ErrorState, LoadingState } from "../components/States";
 import { api } from "../services/api";
 import { getBrand } from "../data/brands";
-import { getSetupCompletion, isShopifyConnected } from "../lib/setupProgress";
+import { getSetupCompletion } from "../lib/setupProgress";
 
 const setupCopy = {
   knowledge: {
@@ -25,12 +26,6 @@ const setupCopy = {
     detail: "Add policies, FAQs and support docs so the AI answers with brand context.",
     page: "knowledge",
     icon: Database
-  },
-  shopify: {
-    title: "Connect Shopify",
-    detail: "Review the demo catalog and order sync layer for this workspace.",
-    page: "shopify",
-    icon: ShoppingBag
   },
   playground: {
     title: "Test AI in Playground",
@@ -123,7 +118,7 @@ function formatPercent(rate) {
 
 export function Home({ brandId, onBrandChange, onNavigate }) {
   const [knowledge, setKnowledge] = useState(null);
-  const [shopify, setShopify] = useState(null);
+  const [instagramStatus, setInstagramStatus] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -133,11 +128,10 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
     let active = true;
     setLoading(true);
     setError("");
-    Promise.all([api.getKnowledgeDocuments(brandId), api.getShopifyStatus(brandId), api.getAnalytics(brandId)])
-      .then(([knowledgeData, shopifyData, analyticsData]) => {
+    Promise.all([api.getKnowledgeDocuments(brandId), api.getAnalytics(brandId)])
+      .then(([knowledgeData, analyticsData]) => {
         if (!active) return;
         setKnowledge(knowledgeData);
-        setShopify(shopifyData);
         setAnalytics(analyticsData);
       })
       .catch((err) => {
@@ -150,6 +144,17 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
     return () => {
       active = false;
     };
+  }, [brandId]);
+
+  useEffect(() => {
+    let active = true;
+    setInstagramStatus(null);
+    api.getInstagramStatus(brandId).then(status => {
+      if (active) setInstagramStatus(status);
+    }).catch(() => {
+      if (active) setInstagramStatus({ error: true });
+    });
+    return () => { active = false; };
   }, [brandId]);
 
   useEffect(() => {
@@ -187,16 +192,15 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
 
   const brand = getBrand(brandId);
   const setupSteps = useMemo(() => {
-    const completion = getSetupCompletion({ knowledge, shopify, localSetup });
+    const completion = getSetupCompletion({ knowledge, localSetup });
 
     return [
       { id: "knowledge", completed: completion.knowledge, ...setupCopy.knowledge },
-      { id: "shopify", completed: completion.shopify, ...setupCopy.shopify },
       { id: "playground", completed: completion.playground, ...setupCopy.playground },
       { id: "install", completed: completion.install, ...setupCopy.install },
       { id: "live", completed: completion.live, ...setupCopy.live }
     ];
-  }, [knowledge, localSetup, shopify]);
+  }, [knowledge, localSetup]);
 
   const completedSteps = setupSteps.filter((step) => step.completed).length;
   const progress = Math.round((completedSteps / setupSteps.length) * 100);
@@ -205,7 +209,7 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
     const nextSetup = { ...localSetup };
     if (step.id === "playground") nextSetup.playground = true;
     if (step.id === "install") nextSetup.install = true;
-    if (step.id === "live" && completedSteps >= 4) nextSetup.live = true;
+    if (step.id === "live" && completedSteps >= 3) nextSetup.live = true;
     setLocalSetup(nextSetup);
     saveLocalSetupFlags(brandId, nextSetup);
     onNavigate?.(step.page);
@@ -251,7 +255,6 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
                 tone="amber"
               />
               <MetricCard icon={Database} label="Knowledge docs" value={knowledge?.stats?.documentCount || 0} detail={`${knowledge?.stats?.chunkCount || 0} indexed chunks`} />
-              <MetricCard icon={ShoppingBag} label="Shopify status" value={isShopifyConnected(shopify) ? "Connected" : "Not ready"} detail={`${shopify?.productCount || 0} products synced`} tone="green" />
               <MetricCard
                 icon={Clock3}
                 label="Avg response time"
@@ -262,6 +265,35 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
           );
         })()
       ) : null}
+
+      <section className="mt-6">
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-ink">Messaging channels</p>
+          <p className="mt-1 text-xs text-muted">Connect social channels and manage customer messages from one place.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white"><MessageCircle className="h-5 w-5" /></span>
+                <div><p className="text-sm font-semibold text-ink">WhatsApp</p><p className="mt-1 text-xs leading-5 text-muted">Open the shared inbox for WhatsApp customer conversations. Number setup is managed by Teviq.</p></div>
+              </div>
+              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Manual setup</span>
+            </div>
+            <button type="button" onClick={() => onNavigate?.("conversations")} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink hover:underline">Open WhatsApp inbox <ArrowRight className="h-4 w-4" /></button>
+          </Card>
+          <Card>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-fuchsia-600 text-white"><Instagram className="h-5 w-5" /></span>
+                <div><p className="text-sm font-semibold text-ink">Instagram</p><p className="mt-1 text-xs leading-5 text-muted">Route Instagram DMs through Teviq Brain and reply from the shared inbox.</p></div>
+              </div>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${instagramStatus?.connected ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{instagramStatus?.connected ? "Connected" : instagramStatus?.error ? "Status unavailable" : "Not connected"}</span>
+            </div>
+            <button type="button" onClick={() => onNavigate?.("settings")} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink hover:underline">{instagramStatus?.connected ? "Manage Instagram" : "Connect Instagram"} <ArrowRight className="h-4 w-4" /></button>
+          </Card>
+        </div>
+      </section>
 
       <div className="mt-6 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <Card className="overflow-hidden">
@@ -332,7 +364,7 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
           </ol>
           <button
             type="button"
-            onClick={() => openSetupStep(setupSteps.find((step) => !step.completed) || setupSteps[4])}
+            onClick={() => openSetupStep(setupSteps.find((step) => !step.completed) || setupSteps[3])}
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-950/15"
           >
             Continue setup
