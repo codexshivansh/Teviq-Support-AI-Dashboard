@@ -106,6 +106,7 @@ function trialDraft(trial) {
 function AiTrialPanel({ brandId, isTeviqAdmin }) {
   const [usage, setUsage] = useState(null);
   const [draft, setDraft] = useState(null);
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -113,6 +114,7 @@ function AiTrialPanel({ brandId, isTeviqAdmin }) {
     let active = true;
     setUsage(null);
     setDraft(null);
+    setEditing(false);
     setError("");
     api.getAiTrialUsage(brandId).then((result) => {
       if (!active) return;
@@ -136,6 +138,7 @@ function AiTrialPanel({ brandId, isTeviqAdmin }) {
       });
       setUsage(await api.getAiTrialUsage(brandId));
       setDraft(trialDraft(result.trial));
+      setEditing(false);
     } catch (err) {
       setError(err.message || "Could not save trial limits.");
     } finally {
@@ -145,30 +148,43 @@ function AiTrialPanel({ brandId, isTeviqAdmin }) {
 
   return (
     <Card className="mt-5">
-      <h2 className="text-lg font-semibold text-ink">AI trial usage</h2>
-      <p className="mt-1 text-sm text-muted">Groq calls across website, WhatsApp and Instagram. Day resets at midnight India time. Counts include retries.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-ink">AI trial usage</h2>
+          <p className="mt-1 text-sm text-muted">Website, WhatsApp and Instagram · resets at midnight India time · retries count as calls</p>
+        </div>
+        {usage?.meteringEnabled && isTeviqAdmin && !editing ? (
+          <button type="button" onClick={() => setEditing(true)} className="rounded-xl border border-line bg-white/70 px-4 py-2 text-sm font-semibold text-ink hover:bg-white dark:bg-white/5 dark:hover:bg-white/10">
+            Configure trial
+          </button>
+        ) : null}
+      </div>
       {error ? <p className="mt-3 text-sm text-rose-600" role="alert">{error}</p> : null}
       {!usage && !error ? <p className="mt-3 text-sm text-muted">Loading usage…</p> : null}
-      {usage && !usage.meteringEnabled ? <p className="mt-3 text-sm text-amber-700">Metering is not enabled on the backend yet. No trial limits are active.</p> : null}
+      {usage && !usage.meteringEnabled ? (
+        <p className="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+          Setup pending. Usage tracking and client trial limits are not active yet.
+        </p>
+      ) : null}
       {usage ? (
         <>
           {usage.meteringEnabled ? <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <p className="rounded-xl bg-slate-50 p-3 text-sm">AI calls today<br /><strong>{usage.calls}{usage.trial?.enabled ? ` / ${usage.trial.max_calls_per_day}` : ""}</strong></p>
-            <p className="rounded-xl bg-slate-50 p-3 text-sm">Tokens today<br /><strong>{usage.tokens.toLocaleString()}{usage.trial?.enabled ? ` / ${usage.trial.max_tokens_per_day.toLocaleString()}` : ""}</strong></p>
-            <p className="rounded-xl bg-slate-50 p-3 text-sm">Estimated Groq cost today<br /><strong>{usage.hasUnknownUsage ? "At least " : ""}${usage.estimatedUsd.toFixed(4)}</strong></p>
+            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">AI calls today<br /><strong className="mt-1 block text-xl text-ink">{usage.calls}{usage.trial?.enabled ? ` / ${usage.trial.max_calls_per_day}` : ""}</strong></p>
+            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">Tokens today<br /><strong className="mt-1 block text-xl text-ink">{usage.tokens.toLocaleString()}{usage.trial?.enabled ? ` / ${usage.trial.max_tokens_per_day.toLocaleString()}` : ""}</strong></p>
+            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">Estimated Groq cost today<br /><strong className="mt-1 block text-xl text-ink">{usage.hasUnknownUsage ? "At least " : ""}${usage.estimatedUsd.toFixed(4)}</strong></p>
           </div> : null}
           {usage.meteringEnabled ? <p className="mt-2 text-xs text-muted">Pricing is an estimate; check the Groq invoice for actual billing. Unknown usage is reserved against the token cap.</p> : null}
-          {isTeviqAdmin && draft ? (
-            <form onSubmit={save} className="mt-5 grid gap-3 md:grid-cols-2">
-              <label className="text-sm">Trial starts (local time)<input required type="datetime-local" value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
-              <label className="text-sm">Trial ends (local time)<input required type="datetime-local" value={draft.endsAt} onChange={(event) => setDraft({ ...draft, endsAt: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
-              <label className="text-sm">Max AI calls per day<input required type="number" min="1" max="1000" value={draft.maxCallsPerDay} onChange={(event) => setDraft({ ...draft, maxCallsPerDay: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
-              <label className="text-sm">Max tokens per day<input required type="number" min="1" max="100000" value={draft.maxTokensPerDay} onChange={(event) => setDraft({ ...draft, maxTokensPerDay: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
+          {usage.meteringEnabled && isTeviqAdmin && draft && editing ? (
+            <form onSubmit={save} className="mt-5 grid gap-4 border-t border-line pt-5 md:grid-cols-2">
+              <label className="text-sm font-medium text-ink">Trial starts (local time)<input required type="datetime-local" value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
+              <label className="text-sm font-medium text-ink">Trial ends (local time)<input required type="datetime-local" value={draft.endsAt} onChange={(event) => setDraft({ ...draft, endsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
+              <label className="text-sm font-medium text-ink">Max AI calls per day<input required type="number" min="1" max="1000" value={draft.maxCallsPerDay} onChange={(event) => setDraft({ ...draft, maxCallsPerDay: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5" /></label>
+              <label className="text-sm font-medium text-ink">Max tokens per day<input required type="number" min="1" max="100000" value={draft.maxTokensPerDay} onChange={(event) => setDraft({ ...draft, maxTokensPerDay: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5" /></label>
               <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} /> Activate this client trial</label>
               <p className="text-xs text-muted md:col-span-2">Editing this form uses no AI tokens. Saving will update settings only; it will not call Groq.</p>
               <div className="flex gap-3 md:col-span-2">
-                <button type="submit" disabled={saving || !usage.meteringEnabled} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save trial settings"}</button>
-                <button type="button" disabled={saving} onClick={() => { setDraft(trialDraft(usage.trial)); setError(""); }} className="rounded-lg border px-4 py-2 text-sm font-semibold disabled:opacity-50">Discard changes</button>
+                <button type="submit" disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900">{saving ? "Saving…" : "Save trial settings"}</button>
+                <button type="button" disabled={saving} onClick={() => { setDraft(trialDraft(usage.trial)); setError(""); setEditing(false); }} className="rounded-xl border border-line bg-white/70 px-4 py-2 text-sm font-semibold text-ink disabled:opacity-50 dark:bg-white/5">Discard changes</button>
               </div>
             </form>
           ) : null}
