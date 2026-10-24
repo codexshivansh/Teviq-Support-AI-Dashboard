@@ -41,6 +41,8 @@ export function Settings({ brandId, onBrandChange }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [supportEditing, setSupportEditing] = useState(false);
+  const [supportSnapshot, setSupportSnapshot] = useState(null);
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const [instagramStatus, setInstagramStatus] = useState(null);
   const [instagramLoading, setInstagramLoading] = useState(true);
@@ -118,6 +120,8 @@ export function Settings({ brandId, onBrandChange }) {
     setError("");
     setSaveError("");
     setSaved(false);
+    setSupportEditing(false);
+    setSupportSnapshot(null);
 
     api
       .getBrandSettings(brandId)
@@ -168,20 +172,65 @@ export function Settings({ brandId, onBrandChange }) {
         welcomeTitle: settings.welcomeTitle,
         welcomeMessage: settings.welcomeMessage,
         quickActions: settings.quickActions,
-        supportPhone: settings.supportPhone,
-        supportEmail: settings.supportEmail,
-        businessHours: settings.businessHours,
         themeColor: settings.themeColor,
         appearance: { ...settings.appearance, showBranding: true },
         inputPlaceholder: settings.inputPlaceholder
       });
       const brand = getBrand(brandId, brands);
-      setSettings(toSettingsState(brand, result?.settings || {}));
+      setSettings((current) => {
+        const next = toSettingsState(brand, result?.settings || {});
+        return supportEditing ? { ...next, supportPhone: current.supportPhone, supportEmail: current.supportEmail, businessHours: current.businessHours } : next;
+      });
       setSaved(true);
       return true;
     } catch (err) {
       setSaveError(err.message);
       return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startSupportEdit() {
+    setSupportSnapshot({ supportPhone: settings.supportPhone, supportEmail: settings.supportEmail, businessHours: settings.businessHours });
+    setSupportEditing(true);
+    setSaved(false);
+    setSaveError("");
+  }
+
+  function discardSupportEdit() {
+    if (supportSnapshot) setSettings((current) => ({ ...current, ...supportSnapshot }));
+    setSupportEditing(false);
+    setSupportSnapshot(null);
+    setSaveError("");
+  }
+
+  async function saveSupportEdit() {
+    if (supportSnapshot && ["supportPhone", "supportEmail", "businessHours"].every((field) => settings[field] === supportSnapshot[field])) {
+      setSupportEditing(false);
+      setSupportSnapshot(null);
+      return;
+    }
+    setSaving(true);
+    setSaveError("");
+    setSaved(false);
+    try {
+      const result = await api.updateBrandSettings(brandId, {
+        supportPhone: settings.supportPhone,
+        supportEmail: settings.supportEmail,
+        businessHours: settings.businessHours
+      });
+      setSettings((current) => ({
+        ...current,
+        supportPhone: result.settings.supportPhone || "",
+        supportEmail: result.settings.supportEmail || "",
+        businessHours: result.settings.businessHours || ""
+      }));
+      setSupportEditing(false);
+      setSupportSnapshot(null);
+      setSaved(true);
+    } catch (err) {
+      setSaveError(err.message);
     } finally {
       setSaving(false);
     }
@@ -344,6 +393,7 @@ export function Settings({ brandId, onBrandChange }) {
                 ))}
               </div>
             </div>
+            <div className="mt-5"><Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save widget settings"}</Button></div>
           </Card>
 
           <Card>
@@ -354,6 +404,7 @@ export function Settings({ brandId, onBrandChange }) {
           </Card>
 
           <Card>
+            <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-sm font-semibold text-ink">Support details</p><p className="text-xs text-muted">Contact details and business hours shown to visitors.</p></div>{!supportEditing ? <Button variant="secondary" onClick={startSupportEdit}>Edit</Button> : null}</div>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="flex items-center gap-2 text-sm font-semibold text-ink">
@@ -362,6 +413,7 @@ export function Settings({ brandId, onBrandChange }) {
                 </span>
                 <input
                   value={settings.supportPhone}
+                  disabled={!supportEditing}
                   onChange={(event) => update("supportPhone", event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                 />
@@ -370,6 +422,7 @@ export function Settings({ brandId, onBrandChange }) {
                 <span className="text-sm font-semibold text-ink">Support email</span>
                 <input
                   value={settings.supportEmail}
+                  disabled={!supportEditing}
                   onChange={(event) => update("supportEmail", event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                 />
@@ -381,6 +434,7 @@ export function Settings({ brandId, onBrandChange }) {
                 </span>
                 <input
                   value={settings.businessHours}
+                  disabled={!supportEditing}
                   onChange={(event) => update("businessHours", event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                 />
@@ -388,12 +442,7 @@ export function Settings({ brandId, onBrandChange }) {
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <Button onClick={save} disabled={saving}>
-                {saving ? "Saving..." : "Save changes"}
-              </Button>
-              <Button variant="secondary" onClick={loadSettings} disabled={saving}>
-                Discard changes
-              </Button>
+              {supportEditing ? <><Button onClick={saveSupportEdit} disabled={saving}>{saving ? "Saving..." : "Save changes"}</Button><Button variant="secondary" onClick={discardSupportEdit} disabled={saving}>Discard changes</Button></> : null}
               {saved ? <span className="text-sm font-semibold text-emerald-600">Saved. Your website widget uses these settings automatically.</span> : null}
               {saveError ? <span className="text-sm font-semibold text-rose-600">{saveError}</span> : null}
             </div>
