@@ -41,6 +41,9 @@ export function Settings({ brandId, onBrandChange }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [widgetEditing, setWidgetEditing] = useState(false);
+  const [widgetSnapshot, setWidgetSnapshot] = useState(null);
+  const [widgetSaved, setWidgetSaved] = useState(false);
   const [supportEditing, setSupportEditing] = useState(false);
   const [supportSnapshot, setSupportSnapshot] = useState(null);
   const [customizationOpen, setCustomizationOpen] = useState(false);
@@ -49,6 +52,7 @@ export function Settings({ brandId, onBrandChange }) {
   const [instagramBusy, setInstagramBusy] = useState(false);
   const [instagramError, setInstagramError] = useState("");
   const [instagramNotice, setInstagramNotice] = useState(null);
+  const [instagramDisconnectConfirm, setInstagramDisconnectConfirm] = useState(false);
 
   useEffect(() => {
     if (!customizationOpen) return undefined;
@@ -100,10 +104,12 @@ export function Settings({ brandId, onBrandChange }) {
   }
 
   async function disconnectInstagram() {
+    if (!instagramDisconnectConfirm) return;
     setInstagramBusy(true);
     setInstagramError("");
     try {
       await api.disconnectInstagram(brandId);
+      setInstagramDisconnectConfirm(false);
       setInstagramNotice({ type: "success", message: "Instagram was disconnected from this workspace." });
       await loadInstagramStatus();
     } catch (err) {
@@ -120,6 +126,10 @@ export function Settings({ brandId, onBrandChange }) {
     setError("");
     setSaveError("");
     setSaved(false);
+    setWidgetEditing(false);
+    setWidgetSnapshot(null);
+    setWidgetSaved(false);
+    setInstagramDisconnectConfirm(false);
     setSupportEditing(false);
     setSupportSnapshot(null);
 
@@ -169,23 +179,70 @@ export function Settings({ brandId, onBrandChange }) {
 
     try {
       const result = await api.updateBrandSettings(brandId, {
-        welcomeTitle: settings.welcomeTitle,
-        welcomeMessage: settings.welcomeMessage,
-        quickActions: settings.quickActions,
-        themeColor: settings.themeColor,
         appearance: { ...settings.appearance, showBranding: true },
         inputPlaceholder: settings.inputPlaceholder
       });
       const brand = getBrand(brandId, brands);
       setSettings((current) => {
         const next = toSettingsState(brand, result?.settings || {});
-        return supportEditing ? { ...next, supportPhone: current.supportPhone, supportEmail: current.supportEmail, businessHours: current.businessHours } : next;
+        return {
+          ...next,
+          ...(supportEditing ? { supportPhone: current.supportPhone, supportEmail: current.supportEmail, businessHours: current.businessHours } : {}),
+          ...(widgetEditing ? { themeColor: current.themeColor, welcomeTitle: current.welcomeTitle, welcomeMessage: current.welcomeMessage, quickActions: current.quickActions } : {})
+        };
       });
       setSaved(true);
       return true;
     } catch (err) {
       setSaveError(err.message);
       return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startWidgetEdit() {
+    setWidgetSnapshot({ themeColor: settings.themeColor, welcomeTitle: settings.welcomeTitle, welcomeMessage: settings.welcomeMessage, quickActions: [...settings.quickActions] });
+    setWidgetEditing(true);
+    setWidgetSaved(false);
+    setSaveError("");
+  }
+
+  function discardWidgetEdit() {
+    if (widgetSnapshot) setSettings((current) => ({ ...current, ...widgetSnapshot }));
+    setWidgetEditing(false);
+    setWidgetSnapshot(null);
+    setSaveError("");
+  }
+
+  async function saveWidgetEdit() {
+    if (widgetSnapshot && ["themeColor", "welcomeTitle", "welcomeMessage"].every((field) => settings[field] === widgetSnapshot[field]) && settings.quickActions.every((action, index) => action === widgetSnapshot.quickActions[index])) {
+      setWidgetEditing(false);
+      setWidgetSnapshot(null);
+      return;
+    }
+    setSaving(true);
+    setSaveError("");
+    setWidgetSaved(false);
+    try {
+      const result = await api.updateBrandSettings(brandId, {
+        themeColor: settings.themeColor,
+        welcomeTitle: settings.welcomeTitle,
+        welcomeMessage: settings.welcomeMessage,
+        quickActions: settings.quickActions
+      });
+      setSettings((current) => ({
+        ...current,
+        themeColor: result.settings.themeColor,
+        welcomeTitle: result.settings.welcomeTitle,
+        welcomeMessage: result.settings.welcomeMessage,
+        quickActions: result.settings.quickActions
+      }));
+      setWidgetEditing(false);
+      setWidgetSnapshot(null);
+      setWidgetSaved(true);
+    } catch (err) {
+      setSaveError(err.message);
     } finally {
       setSaving(false);
     }
@@ -266,7 +323,7 @@ export function Settings({ brandId, onBrandChange }) {
                 </div>
               </div>
               {instagramStatus?.connected ? (
-                <Button variant="secondary" onClick={disconnectInstagram} disabled={instagramBusy || isDemoSession}>
+                <Button variant="secondary" onClick={() => setInstagramDisconnectConfirm(true)} disabled={instagramBusy || isDemoSession}>
                   {instagramBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4" />}
                   Disconnect
                 </Button>
@@ -277,6 +334,17 @@ export function Settings({ brandId, onBrandChange }) {
                 </Button>
               )}
             </div>
+
+            {instagramDisconnectConfirm && instagramStatus?.connected ? (
+              <div role="alertdialog" aria-label="Confirm Instagram disconnect" className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <p className="font-semibold">Are you sure you want to disconnect this Instagram account?</p>
+                <p className="mt-1">New Instagram messages will stop syncing with Teviq.</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={() => setInstagramDisconnectConfirm(false)} disabled={instagramBusy}>Cancel</Button>
+                  <Button onClick={disconnectInstagram} disabled={instagramBusy}>{instagramBusy ? "Disconnecting..." : "Yes, disconnect"}</Button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-4 rounded-2xl border border-line bg-slate-50/70 p-4 dark:bg-white/[0.03]">
               {instagramLoading ? (
@@ -335,7 +403,8 @@ export function Settings({ brandId, onBrandChange }) {
           </Card>
 
           <Card>
-            <div className="mb-5 flex items-center gap-3">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-950 text-white">
                 <Palette className="h-5 w-5" />
               </div>
@@ -343,6 +412,8 @@ export function Settings({ brandId, onBrandChange }) {
                 <p className="text-sm font-semibold text-ink">Widget theme</p>
                 <p className="text-xs text-muted">Colors and greeting</p>
               </div>
+              </div>
+              {!widgetEditing ? <Button variant="secondary" onClick={startWidgetEdit}>Edit</Button> : null}
             </div>
 
             <label className="block">
@@ -351,11 +422,13 @@ export function Settings({ brandId, onBrandChange }) {
                 <input
                   type="color"
                   value={settings.themeColor}
+                  disabled={!widgetEditing}
                   onChange={(event) => update("themeColor", event.target.value)}
                   className="h-12 w-16 rounded-2xl border border-line bg-white p-1 dark:bg-white/10"
                 />
                 <input
                   value={settings.themeColor}
+                  disabled={!widgetEditing}
                   onChange={(event) => update("themeColor", event.target.value)}
                   className="min-w-0 flex-1 rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                 />
@@ -366,6 +439,7 @@ export function Settings({ brandId, onBrandChange }) {
               <span className="text-sm font-semibold text-ink">Welcome heading</span>
               <input
                 value={settings.welcomeTitle}
+                disabled={!widgetEditing}
                 onChange={(event) => update("welcomeTitle", event.target.value)}
                 className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink dark:bg-white/5"
               />
@@ -374,6 +448,7 @@ export function Settings({ brandId, onBrandChange }) {
               <span className="text-sm font-semibold text-ink">Welcome message</span>
               <textarea
                 value={settings.welcomeMessage}
+                disabled={!widgetEditing}
                 onChange={(event) => update("welcomeMessage", event.target.value)}
                 rows={3}
                 className="mt-2 w-full resize-none rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
@@ -387,13 +462,14 @@ export function Settings({ brandId, onBrandChange }) {
                   <input
                     key={index}
                     value={action}
+                    disabled={!widgetEditing}
                     onChange={(event) => updateQuickAction(index, event.target.value)}
                     className="rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 dark:bg-white/5"
                   />
                 ))}
               </div>
             </div>
-            <div className="mt-5"><Button onClick={save} disabled={saving}>{saving ? "Saving..." : "Save widget settings"}</Button></div>
+            <div className="mt-5 flex flex-wrap items-center gap-3">{widgetEditing ? <><Button onClick={saveWidgetEdit} disabled={saving}>{saving ? "Saving..." : "Save widget settings"}</Button><Button variant="secondary" onClick={discardWidgetEdit} disabled={saving}>Discard changes</Button></> : null}{widgetSaved ? <span className="text-sm font-semibold text-emerald-600">Widget settings saved.</span> : null}{widgetEditing && saveError ? <span className="text-sm font-semibold text-rose-600">{saveError}</span> : null}</div>
           </Card>
 
           <Card>
