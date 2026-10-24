@@ -71,6 +71,16 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  getAiTrialUsage(brandId) {
+    return request(`/api/ai-trial/${encodeURIComponent(brandId)}`, { requiresAuth: true });
+  },
+  saveAiTrialLimit(brandId, payload) {
+    return request(`/api/ai-trial/${encodeURIComponent(brandId)}`, {
+      requiresAuth: true,
+      method: "PUT",
+      body: JSON.stringify(payload)
+    });
+  },
   getKnowledgeDocuments(brandId) {
     return request(`/api/knowledge/${brandId}/documents`, { requiresAuth: true });
   },

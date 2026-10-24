@@ -243,7 +243,7 @@ export default function App() {
           className={activePage === "conversations" ? "xl:h-full xl:min-h-0" : ""}
         >
           <Suspense fallback={<WorkspaceLoading />}>
-            <Page brandId={activeBrandId} onBrandChange={handleBrandChange} onNavigate={navigate} />
+            <Page brandId={activeBrandId} onBrandChange={handleBrandChange} onNavigate={navigate} isTeviqAdmin={isTeviqAdmin} />
           </Suspense>
         </motion.div>
       </AnimatePresence>

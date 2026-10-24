@@ -86,7 +86,99 @@ function RankedList({ items, labelKey, emptyDescription }) {
   );
 }
 
-export function AnalyticsPreview({ brandId, onBrandChange }) {
+function localDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function trialDraft(trial) {
+  return {
+    enabled: trial?.enabled || false,
+    startsAt: localDateTime(trial?.starts_at),
+    endsAt: localDateTime(trial?.ends_at),
+    maxCallsPerDay: trial?.max_calls_per_day || 10,
+    maxTokensPerDay: trial?.max_tokens_per_day || 30000
+  };
+}
+
+function AiTrialPanel({ brandId, isTeviqAdmin }) {
+  const [usage, setUsage] = useState(null);
+  const [draft, setDraft] = useState(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setUsage(null);
+    setDraft(null);
+    setError("");
+    api.getAiTrialUsage(brandId).then((result) => {
+      if (!active) return;
+      setUsage(result);
+      setDraft(trialDraft(result.trial));
+    }).catch((err) => { if (active) setError(err.message); });
+    return () => { active = false; };
+  }, [brandId]);
+
+  async function save(event) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const result = await api.saveAiTrialLimit(brandId, {
+        enabled: draft.enabled,
+        startsAt: new Date(draft.startsAt).toISOString(),
+        endsAt: new Date(draft.endsAt).toISOString(),
+        maxCallsPerDay: Number(draft.maxCallsPerDay),
+        maxTokensPerDay: Number(draft.maxTokensPerDay)
+      });
+      setUsage(await api.getAiTrialUsage(brandId));
+      setDraft(trialDraft(result.trial));
+    } catch (err) {
+      setError(err.message || "Could not save trial limits.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="mt-5">
+      <h2 className="text-lg font-semibold text-ink">AI trial usage</h2>
+      <p className="mt-1 text-sm text-muted">Groq calls across website, WhatsApp and Instagram. Day resets at midnight India time. Counts include retries.</p>
+      {error ? <p className="mt-3 text-sm text-rose-600" role="alert">{error}</p> : null}
+      {!usage && !error ? <p className="mt-3 text-sm text-muted">Loading usage…</p> : null}
+      {usage && !usage.meteringEnabled ? <p className="mt-3 text-sm text-amber-700">Metering is not enabled on the backend yet. No trial limits are active.</p> : null}
+      {usage ? (
+        <>
+          {usage.meteringEnabled ? <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <p className="rounded-xl bg-slate-50 p-3 text-sm">AI calls today<br /><strong>{usage.calls}{usage.trial?.enabled ? ` / ${usage.trial.max_calls_per_day}` : ""}</strong></p>
+            <p className="rounded-xl bg-slate-50 p-3 text-sm">Tokens today<br /><strong>{usage.tokens.toLocaleString()}{usage.trial?.enabled ? ` / ${usage.trial.max_tokens_per_day.toLocaleString()}` : ""}</strong></p>
+            <p className="rounded-xl bg-slate-50 p-3 text-sm">Estimated Groq cost today<br /><strong>{usage.hasUnknownUsage ? "At least " : ""}${usage.estimatedUsd.toFixed(4)}</strong></p>
+          </div> : null}
+          {usage.meteringEnabled ? <p className="mt-2 text-xs text-muted">Pricing is an estimate; check the Groq invoice for actual billing. Unknown usage is reserved against the token cap.</p> : null}
+          {isTeviqAdmin && draft ? (
+            <form onSubmit={save} className="mt-5 grid gap-3 md:grid-cols-2">
+              <label className="text-sm">Trial starts (local time)<input required type="datetime-local" value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
+              <label className="text-sm">Trial ends (local time)<input required type="datetime-local" value={draft.endsAt} onChange={(event) => setDraft({ ...draft, endsAt: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
+              <label className="text-sm">Max AI calls per day<input required type="number" min="1" max="1000" value={draft.maxCallsPerDay} onChange={(event) => setDraft({ ...draft, maxCallsPerDay: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
+              <label className="text-sm">Max tokens per day<input required type="number" min="1" max="100000" value={draft.maxTokensPerDay} onChange={(event) => setDraft({ ...draft, maxTokensPerDay: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
+              <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} /> Activate this client trial</label>
+              <p className="text-xs text-muted md:col-span-2">Editing this form uses no AI tokens. Saving will update settings only; it will not call Groq.</p>
+              <div className="flex gap-3 md:col-span-2">
+                <button type="submit" disabled={saving || !usage.meteringEnabled} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save trial settings"}</button>
+                <button type="button" disabled={saving} onClick={() => { setDraft(trialDraft(usage.trial)); setError(""); }} className="rounded-lg border px-4 py-2 text-sm font-semibold disabled:opacity-50">Discard changes</button>
+              </div>
+            </form>
+          ) : null}
+        </>
+      ) : null}
+    </Card>
+  );
+}
+
+export function AnalyticsPreview({ brandId, onBrandChange, isTeviqAdmin }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -151,6 +243,8 @@ export function AnalyticsPreview({ brandId, onBrandChange }) {
         brandId={brandId}
         onBrandChange={onBrandChange}
       />
+
+      <AiTrialPanel brandId={brandId} isTeviqAdmin={isTeviqAdmin} />
 
       {loading ? <LoadingState label="Loading analytics" /> : null}
       {error && !loading ? <ErrorState message={error} /> : null}
