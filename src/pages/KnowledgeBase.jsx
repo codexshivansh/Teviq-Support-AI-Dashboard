@@ -761,7 +761,7 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
         {showDocumentForm ? <Card className="mb-4">
           <form onSubmit={saveDocument} className="space-y-4">
             <div><FieldLabel>Document title</FieldLabel><TextInput value={documentForm.title} onChange={(event) => setDocumentForm((value) => ({ ...value, title: event.target.value }))} maxLength={160} required /></div>
-            <div><FieldLabel>Knowledge text</FieldLabel><TextArea rows={16} value={documentForm.content} onChange={(event) => setDocumentForm((value) => ({ ...value, content: event.target.value }))} minLength={20} required /></div>
+            <div><FieldLabel>Knowledge text</FieldLabel><TextArea rows={16} value={documentForm.content} onChange={(event) => setDocumentForm((value) => ({ ...value, content: event.target.value }))} minLength={20} maxLength={100000} required /><p className="mt-1 text-xs text-muted">{documentForm.content.length.toLocaleString()} / 100,000 characters</p></div>
             <div className="flex gap-2"><Button type="submit" disabled={savingDocument}>{savingDocument ? "Saving" : "Save and update AI"}</Button><Button type="button" variant="secondary" onClick={() => setShowDocumentForm(false)}>Cancel</Button></div>
           </form>
         </Card> : null}
