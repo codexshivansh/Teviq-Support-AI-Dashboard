@@ -152,6 +152,8 @@ function DocumentsTab({
   loading,
   uploading,
   deletingId,
+  onNew,
+  onEdit,
   onUploadClick,
   onDelete
 }) {
@@ -160,25 +162,25 @@ function DocumentsTab({
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
         <Card><p className="text-sm text-muted">Documents</p><p className="mt-2 text-2xl font-semibold">{stats?.documentCount || 0}</p></Card>
         <Card><p className="text-sm text-muted">Chunks</p><p className="mt-2 text-2xl font-semibold">{stats?.chunkCount || 0}</p></Card>
-        <Card><p className="text-sm text-muted">Supported</p><p className="mt-2 text-2xl font-semibold">PDF DOCX TXT</p></Card>
+        <Card><p className="text-sm text-muted">Editing</p><p className="mt-2 text-2xl font-semibold">Text + files</p></Card>
       </div>
 
       <Card className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-ink">Upload source documents</p>
+          <p className="text-sm font-semibold text-ink">Add knowledge documents</p>
           <p className="mt-1 text-sm leading-6 text-muted">
-            Keep using the current PDF, DOCX and TXT ingestion flow for long-form knowledge.
+            Write and edit text directly, or upload a PDF, DOCX or TXT file.
           </p>
         </div>
-        <Button onClick={onUploadClick} disabled={uploading}>
-          <UploadCloud className="h-4 w-4" />
-          {uploading ? "Uploading" : "Upload document"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={onNew}><Plus className="h-4 w-4" /> Add text <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">Recommended</span></Button>
+          <Button variant="secondary" onClick={onUploadClick} disabled={uploading}><UploadCloud className="h-4 w-4" />{uploading ? "Uploading" : "Upload document"}</Button>
+        </div>
       </Card>
 
       {loading ? <LoadingState label="Loading documents" /> : null}
       {!loading && !documents.length ? (
-        <EmptyState title="No documents uploaded yet" description="Upload a policy, FAQ or catalog document to ground AI answers with brand-specific knowledge." />
+        <EmptyState title="No documents yet" description="Add text or upload a document to give the AI brand-specific knowledge." />
       ) : null}
 
       {!loading && documents.length ? (
@@ -212,6 +214,7 @@ function DocumentsTab({
                     <td className="px-5 py-4 font-medium">{doc.chunkCount}</td>
                     <td className="px-5 py-4 text-muted">{formatDate(doc.uploadedAt)}</td>
                     <td className="px-5 py-4 text-right">
+                      <Button variant="secondary" onClick={() => onEdit(doc)}><Pencil className="h-4 w-4" /> View / Edit</Button>{" "}
                       <Button
                         variant="danger"
                         onClick={() => onDelete(doc.documentId)}
@@ -470,6 +473,10 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
   const [loadingDocuments, setLoadingDocuments] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [deletingDocumentId, setDeletingDocumentId] = useState("");
+  const [documentForm, setDocumentForm] = useState({ title: "", content: "" });
+  const [editingDocumentId, setEditingDocumentId] = useState("");
+  const [showDocumentForm, setShowDocumentForm] = useState(false);
+  const [savingDocument, setSavingDocument] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef(null);
 
@@ -532,6 +539,9 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
   }
 
   useEffect(() => {
+    setShowDocumentForm(false);
+    setEditingDocumentId("");
+    setDocumentForm({ title: "", content: "" });
     loadDocuments();
   }, [brandId]);
 
@@ -584,6 +594,35 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
     } finally {
       setDeletingDocumentId("");
     }
+  }
+
+  function startNewDocument() {
+    setEditingDocumentId("");
+    setDocumentForm({ title: "", content: "" });
+    setShowDocumentForm(true);
+  }
+
+  async function editDocument(document) {
+    setError("");
+    try {
+      const data = await api.getKnowledgeDocumentText(brandId, document.documentId);
+      setDocumentForm({ title: document.title || "", content: data.content || "" });
+      setEditingDocumentId(document.documentId);
+      setShowDocumentForm(true);
+    } catch (err) { setError(err.message); }
+  }
+
+  async function saveDocument(event) {
+    event.preventDefault();
+    setSavingDocument(true);
+    setError("");
+    try {
+      await api.saveKnowledgeDocumentText(brandId, documentForm, editingDocumentId);
+      setShowDocumentForm(false);
+      setEditingDocumentId("");
+      await loadDocuments();
+    } catch (err) { setError(err.message); }
+    finally { setSavingDocument(false); }
   }
 
   function startNewPolicy() {
@@ -718,15 +757,26 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
       {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
 
       {activeTab === "documents" ? (
+        <>
+        {showDocumentForm ? <Card className="mb-4">
+          <form onSubmit={saveDocument} className="space-y-4">
+            <div><FieldLabel>Document title</FieldLabel><TextInput value={documentForm.title} onChange={(event) => setDocumentForm((value) => ({ ...value, title: event.target.value }))} maxLength={160} required /></div>
+            <div><FieldLabel>Knowledge text</FieldLabel><TextArea rows={16} value={documentForm.content} onChange={(event) => setDocumentForm((value) => ({ ...value, content: event.target.value }))} minLength={20} required /></div>
+            <div className="flex gap-2"><Button type="submit" disabled={savingDocument}>{savingDocument ? "Saving" : "Save and update AI"}</Button><Button type="button" variant="secondary" onClick={() => setShowDocumentForm(false)}>Cancel</Button></div>
+          </form>
+        </Card> : null}
         <DocumentsTab
           documents={documents}
           stats={stats}
           loading={loadingDocuments}
           uploading={uploading}
           deletingId={deletingDocumentId}
+          onNew={startNewDocument}
+          onEdit={editDocument}
           onUploadClick={() => fileRef.current?.click()}
           onDelete={handleDeleteDocument}
         />
+        </>
       ) : null}
 
       {activeTab === "policies" ? (

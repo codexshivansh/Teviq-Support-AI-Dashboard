@@ -74,6 +74,14 @@ export const api = {
   getKnowledgeDocuments(brandId) {
     return request(`/api/knowledge/${brandId}/documents`, { requiresAuth: true });
   },
+  getKnowledgeDocumentText(brandId, documentId) {
+    return request(`/api/knowledge/${brandId}/documents/${documentId}`, { requiresAuth: true });
+  },
+  saveKnowledgeDocumentText(brandId, payload, documentId) {
+    return request(`/api/knowledge/${brandId}/documents${documentId ? `/${documentId}` : ""}`, {
+      requiresAuth: true, method: documentId ? "PUT" : "POST", body: JSON.stringify(payload)
+    });
+  },
   uploadKnowledgeDocument(brandId, formData) {
     return request(`/api/knowledge/${brandId}/upload`, {
       requiresAuth: true,
@@ -216,6 +224,22 @@ export const api = {
       requiresAuth: true,
       method: "POST",
       body: JSON.stringify({ customerId, text })
+    });
+  },
+  getWhatsAppStatus(brandId) {
+    return request(`/api/whatsapp/${brandId}/status`, { requiresAuth: true });
+  },
+  completeWhatsAppConnection(brandId, payload) {
+    return request(`/api/whatsapp/${brandId}/complete`, {
+      requiresAuth: true,
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  },
+  disconnectWhatsApp(brandId) {
+    return request(`/api/whatsapp/${brandId}/connection`, {
+      requiresAuth: true,
+      method: "DELETE"
     });
   },
   getAnalytics(brandId, days = 30) {
