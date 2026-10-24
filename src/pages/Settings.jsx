@@ -336,12 +336,12 @@ export function Settings({ brandId, onBrandChange }) {
             </div>
 
             {instagramDisconnectConfirm && instagramStatus?.connected ? (
-              <div role="alertdialog" aria-label="Confirm Instagram disconnect" className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+              <div role="alertdialog" aria-label="Confirm Instagram disconnect" className="mt-4 rounded-2xl border border-amber-400/50 bg-amber-500/10 p-4 text-sm text-ink">
                 <p className="font-semibold">Are you sure you want to disconnect this Instagram account?</p>
-                <p className="mt-1">New Instagram messages will stop syncing with Teviq.</p>
+                <p className="mt-1 text-muted">New Instagram messages will stop syncing with Teviq.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button variant="secondary" onClick={() => setInstagramDisconnectConfirm(false)} disabled={instagramBusy}>Cancel</Button>
-                  <Button onClick={disconnectInstagram} disabled={instagramBusy}>{instagramBusy ? "Disconnecting..." : "Yes, disconnect"}</Button>
+                  <button type="button" onClick={() => setInstagramDisconnectConfirm(false)} disabled={instagramBusy} className="rounded-xl border border-line bg-white/10 px-4 py-2 font-semibold text-ink hover:bg-white/15 disabled:opacity-50">Cancel</button>
+                  <button type="button" onClick={disconnectInstagram} disabled={instagramBusy} className="rounded-xl bg-rose-600 px-4 py-2 font-semibold text-white hover:bg-rose-700 disabled:opacity-50">{instagramBusy ? "Disconnecting..." : "Disconnect Instagram"}</button>
                 </div>
               </div>
             ) : null}
