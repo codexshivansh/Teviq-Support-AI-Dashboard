@@ -299,7 +299,7 @@ function PoliciesTab({
         </Button>
       </div>
 
-      {showForm ? (
+      {showForm && !editingPolicy ? (
         <PolicyForm
           form={form}
           editingPolicy={editingPolicy}
@@ -318,31 +318,43 @@ function PoliciesTab({
       {!loading && policies.length ? (
         <div className="grid gap-4">
           {policies.map((policy) => (
-            <Card key={policy.id}>
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-semibold capitalize text-white">
-                      {policy.policyType}
-                    </span>
-                    <span className="text-xs text-muted">Updated {formatDate(policy.updatedAt)}</span>
+            editingPolicy?.id === policy.id && showForm ? (
+              <PolicyForm
+                key={policy.id}
+                form={form}
+                editingPolicy={editingPolicy}
+                saving={saving}
+                onChange={onFormChange}
+                onCancel={onCancel}
+                onSubmit={onSubmit}
+              />
+            ) : (
+              <Card key={policy.id}>
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-semibold capitalize text-white">
+                        {policy.policyType}
+                      </span>
+                      <span className="text-xs text-muted">Updated {formatDate(policy.updatedAt)}</span>
+                    </div>
+                    <h3 className="mt-3 text-base font-semibold text-ink">{policy.title}</h3>
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">{policy.content}</p>
+                    <TagList tags={policy.tags} />
                   </div>
-                  <h3 className="mt-3 text-base font-semibold text-ink">{policy.title}</h3>
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">{policy.content}</p>
-                  <TagList tags={policy.tags} />
+                  <div className="flex shrink-0 gap-2">
+                    <Button variant="secondary" onClick={() => onEdit(policy)}>
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button variant="danger" onClick={() => onDelete(policy)} disabled={deletingId === policy.id}>
+                      <Trash2 className="h-4 w-4" />
+                      {deletingId === policy.id ? "Deleting" : "Delete"}
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button variant="secondary" onClick={() => onEdit(policy)}>
-                    <Pencil className="h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button variant="danger" onClick={() => onDelete(policy.id)} disabled={deletingId === policy.id}>
-                    <Trash2 className="h-4 w-4" />
-                    {deletingId === policy.id ? "Deleting" : "Delete"}
-                  </Button>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            )
           ))}
         </div>
       ) : null}
@@ -667,11 +679,14 @@ export function KnowledgeBase({ brandId, onBrandChange }) {
     }
   }
 
-  async function deletePolicy(policyId) {
-    setDeletingPolicyId(policyId);
+  async function deletePolicy(policy) {
+    const confirmed = window.confirm(`Are you sure you want to delete the policy "${policy.title}"? This action cannot be undone.`);
+    if (!confirmed) return;
+
+    setDeletingPolicyId(policy.id);
     setError("");
     try {
-      await api.deleteKnowledgePolicy(brandId, policyId);
+      await api.deleteKnowledgePolicy(brandId, policy.id);
       await loadPolicies();
     } catch (err) {
       setError(err.message);
