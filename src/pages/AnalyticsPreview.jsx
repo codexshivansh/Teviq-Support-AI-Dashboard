@@ -267,7 +267,7 @@ export function AnalyticsPreview({ brandId, onBrandChange, isTeviqAdmin }) {
 
       {!loading && !error ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <MetricCard
               icon={MessageSquare}
               label="Total conversations"
