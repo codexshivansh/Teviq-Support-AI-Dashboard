@@ -30,7 +30,7 @@ const setupCopy = {
   },
   channels: {
     title: "Connect Channels",
-    detail: "Set up Instagram messaging and WhatsApp inbox access for this workspace.",
+    detail: "Connect Instagram and WhatsApp so customers can message this workspace.",
     page: "settings",
     icon: MessageCircle
   },
@@ -126,6 +126,7 @@ function formatPercent(rate) {
 export function Home({ brandId, onBrandChange, onNavigate }) {
   const [knowledge, setKnowledge] = useState(null);
   const [instagramStatus, setInstagramStatus] = useState(null);
+  const [whatsappStatus, setWhatsAppStatus] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -160,6 +161,17 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
       if (active) setInstagramStatus(status);
     }).catch(() => {
       if (active) setInstagramStatus({ error: true });
+    });
+    return () => { active = false; };
+  }, [brandId]);
+
+  useEffect(() => {
+    let active = true;
+    setWhatsAppStatus(null);
+    api.getWhatsAppStatus(brandId).then(status => {
+      if (active) setWhatsAppStatus(status);
+    }).catch(() => {
+      if (active) setWhatsAppStatus({ error: true });
     });
     return () => { active = false; };
   }, [brandId]);
@@ -295,11 +307,11 @@ export function Home({ brandId, onBrandChange, onNavigate }) {
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-600 text-white"><MessageCircle className="h-5 w-5" /></span>
-                <div><p className="text-sm font-semibold text-ink">WhatsApp</p><p className="mt-1 text-xs leading-5 text-muted">Open the shared inbox for WhatsApp customer conversations. Number setup is managed by Teviq.</p></div>
+                <div><p className="text-sm font-semibold text-ink">WhatsApp</p><p className="mt-1 text-xs leading-5 text-muted">Connect a WhatsApp Business number and manage customer messages in the shared inbox.</p></div>
               </div>
-              <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">Manual setup</span>
+              <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${whatsappStatus?.connected ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{whatsappStatus?.connected ? "Connected" : whatsappStatus?.error ? "Status unavailable" : "Not connected"}</span>
             </div>
-            <button type="button" onClick={() => onNavigate?.("conversations")} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink hover:underline">Open WhatsApp inbox <ArrowRight className="h-4 w-4" /></button>
+            <button type="button" onClick={() => onNavigate?.(whatsappStatus?.connected ? "conversations" : "settings")} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink hover:underline">{whatsappStatus?.connected ? "Open WhatsApp inbox" : "Connect WhatsApp"} <ArrowRight className="h-4 w-4" /></button>
           </Card>
           <Card>
             <div className="flex items-start justify-between gap-4">

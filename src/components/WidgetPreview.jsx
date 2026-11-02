@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import widgetScript from "../../public/widget-preview-v1.3.0.js?raw";
+import widgetScript from "../../public/widget-preview-v1.4.0.js?raw";
 
 export function WidgetPreview({ settings }) {
   const appearance = settings.appearance || {};

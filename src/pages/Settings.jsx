@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Instagram, Loader2, Palette, Phone, Store, Unplug, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, Instagram, Loader2, MessageCircle, Palette, Phone, Store, Unplug, X } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
@@ -11,6 +11,7 @@ import { useTeviqAuth } from "../auth/AuthContext";
 import { DEFAULT_WELCOME_MESSAGE, DEFAULT_QUICK_ACTIONS, DEFAULT_APPEARANCE } from "../data/widget";
 import { WidgetAppearanceEditor } from "../components/WidgetAppearanceEditor";
 import { WidgetPreview } from "../components/WidgetPreview";
+import { loadFacebookSdk, startWhatsAppEmbeddedSignup } from "../lib/whatsappEmbeddedSignup";
 
 const ESCALATION_RULES = ["Fraud/legal/police keywords", "Abusive language", "Medical allergy or safety complaint"];
 
@@ -53,6 +54,12 @@ export function Settings({ brandId, onBrandChange }) {
   const [instagramError, setInstagramError] = useState("");
   const [instagramNotice, setInstagramNotice] = useState(null);
   const [instagramDisconnectConfirm, setInstagramDisconnectConfirm] = useState(false);
+  const [whatsappStatus, setWhatsAppStatus] = useState(null);
+  const [whatsappLoading, setWhatsAppLoading] = useState(true);
+  const [whatsappSdkReady, setWhatsAppSdkReady] = useState(false);
+  const [whatsappBusy, setWhatsAppBusy] = useState(false);
+  const [whatsappError, setWhatsAppError] = useState("");
+  const [whatsappNotice, setWhatsAppNotice] = useState(null);
 
   useEffect(() => {
     if (!customizationOpen) return undefined;
@@ -77,6 +84,37 @@ export function Settings({ brandId, onBrandChange }) {
   useEffect(() => {
     loadInstagramStatus();
   }, [loadInstagramStatus]);
+
+  const loadWhatsAppStatus = useCallback(async () => {
+    if (!brandId) return;
+    setWhatsAppLoading(true);
+    setWhatsAppError("");
+    try {
+      setWhatsAppStatus(await api.getWhatsAppStatus(brandId));
+    } catch (err) {
+      setWhatsAppError(err.message);
+      setWhatsAppStatus({ error: true });
+    } finally {
+      setWhatsAppLoading(false);
+    }
+  }, [brandId]);
+
+  useEffect(() => {
+    loadWhatsAppStatus();
+  }, [loadWhatsAppStatus]);
+
+  useEffect(() => {
+    const signup = whatsappStatus?.signup;
+    if (!signup?.configured || !signup?.appId) {
+      setWhatsAppSdkReady(false);
+      return undefined;
+    }
+    let active = true;
+    loadFacebookSdk(signup)
+      .then(() => { if (active) setWhatsAppSdkReady(true); })
+      .catch(err => { if (active) setWhatsAppError(err.message); });
+    return () => { active = false; };
+  }, [whatsappStatus?.signup?.appId, whatsappStatus?.signup?.configured, whatsappStatus?.signup?.graphVersion]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -116,6 +154,35 @@ export function Settings({ brandId, onBrandChange }) {
       setInstagramError(err.message);
     } finally {
       setInstagramBusy(false);
+    }
+  }
+
+  async function connectWhatsApp() {
+    setWhatsAppBusy(true);
+    setWhatsAppError("");
+    try {
+      const signupData = await startWhatsAppEmbeddedSignup({ configId: whatsappStatus?.signup?.configId });
+      await api.completeWhatsAppConnection(brandId, signupData);
+      setWhatsAppNotice({ type: "success", message: "WhatsApp connected. Send a test message to confirm the inbox is live." });
+      await loadWhatsAppStatus();
+    } catch (err) {
+      if (!/cancelled/i.test(err.message)) setWhatsAppError(err.message);
+    } finally {
+      setWhatsAppBusy(false);
+    }
+  }
+
+  async function disconnectWhatsApp() {
+    setWhatsAppBusy(true);
+    setWhatsAppError("");
+    try {
+      await api.disconnectWhatsApp(brandId);
+      setWhatsAppNotice({ type: "success", message: "WhatsApp was disconnected from this workspace." });
+      await loadWhatsAppStatus();
+    } catch (err) {
+      setWhatsAppError(err.message);
+    } finally {
+      setWhatsAppBusy(false);
     }
   }
 
@@ -311,6 +378,53 @@ export function Settings({ brandId, onBrandChange }) {
       {!busy && !brandsError && !error && settings ? (
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-5">
+          <Card>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-600 text-white">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-ink">WhatsApp messaging</p>
+                  <p className="mt-1 text-xs leading-5 text-muted">Connect a WhatsApp Business number to route messages through Teviq Brain.</p>
+                </div>
+              </div>
+              {whatsappStatus?.connected ? (
+                <Button variant="secondary" onClick={disconnectWhatsApp} disabled={whatsappBusy || isDemoSession}>
+                  {whatsappBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4" />}
+                  Disconnect
+                </Button>
+              ) : (
+                <Button onClick={connectWhatsApp} disabled={whatsappBusy || whatsappLoading || !whatsappStatus?.signupConfigured || !whatsappSdkReady || isDemoSession}>
+                  {whatsappBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+                  {whatsappBusy ? "Connecting..." : "Connect WhatsApp"}
+                </Button>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-line bg-slate-50/70 p-4 dark:bg-white/[0.03]">
+              {whatsappLoading ? (
+                <p className="text-sm text-muted">Checking connection…</p>
+              ) : whatsappStatus?.connected ? (
+                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Connected{whatsappStatus.connection?.displayPhoneNumber ? `: ${whatsappStatus.connection.displayPhoneNumber}` : ""}
+                </div>
+              ) : (
+                <p className="text-sm text-muted">No WhatsApp Business number is connected to this workspace.</p>
+              )}
+              {isDemoSession ? <p className="mt-2 text-xs text-muted">Switch to your secure workspace to connect a real account.</p> : null}
+              {whatsappStatus && !whatsappStatus.signupConfigured ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">Meta Embedded Signup is not configured on the backend yet. Teviq’s Meta app review is currently in progress.</p> : null}
+            </div>
+
+            {whatsappNotice ? (
+              <p className={`mt-3 text-sm font-medium ${whatsappNotice.type === "success" ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}>
+                {whatsappNotice.message}
+              </p>
+            ) : null}
+            {whatsappError ? <p className="mt-3 text-sm font-medium text-rose-600">{whatsappError}</p> : null}
+          </Card>
+
           <Card>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-3">

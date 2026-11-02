@@ -5,6 +5,9 @@ import { EmptyState, ErrorState, LoadingState } from "../components/States";
 import { api } from "../services/api";
 import { formatPhone, getInitials } from "../lib/formatPhone";
 import { startConversationPolling } from "../services/conversationPolling";
+import { ChannelReviewQueue } from '../components/ChannelReviewQueue';
+import { ConversationHandoffControl } from '../components/ConversationHandoffControl';
+import { getDeliveryStatusLabel } from '../lib/deliveryStatus';
 
 // "resolved" deliberately isn't a filter option here — chat_logs has no
 // explicit resolution signal (see backend/services/conversations.service.js
@@ -175,7 +178,7 @@ function getReplyWindowStatus(conversation, conversations, now, channel) {
   return { open: elapsedMs >= 0 && elapsedMs < WHATSAPP_WINDOW_MS };
 }
 
-export function Conversations({ brandId, onBrandChange }) {
+export function Conversations({ brandId, onBrandChange, isTeviqAdmin }) {
   const [status, setStatus] = useState("all");
   const [intent, setIntent] = useState("all");
   const [search, setSearch] = useState("");
@@ -292,6 +295,7 @@ export function Conversations({ brandId, onBrandChange }) {
       </div>
 
       <ChannelTabs activeTab={channelTab} onChange={setChannelTab} />
+      <ChannelReviewQueue key={brandId} brandId={brandId} isTeviqAdmin={isTeviqAdmin} />
 
       {loading ? <LoadingState label="Loading conversations" /> : null}
       {error && !loading ? <ErrorState message={error} /> : null}
@@ -426,6 +430,7 @@ export function Conversations({ brandId, onBrandChange }) {
                     {selected.channel === "whatsapp" && selected.status === "escalated" ? <StatusPill status="escalated" /> : null}
                     {selected.channel !== "instagram" && selected.customerId && customerLabel(selected) !== formatPhone(selected.customerId) ? <span className="truncate text-[11px] text-slate-400">{formatPhone(selected.customerId)}</span> : null}
                   </div>
+                  <ConversationHandoffControl key={`${brandId}:${selected.channel}:${selected.customerId}`} brandId={brandId} channel={selected.channel} customerId={selected.customerId} refreshKey={sendRevision.current} />
                 </div>
 
                 <div
@@ -467,6 +472,11 @@ export function Conversations({ brandId, onBrandChange }) {
                         >
                           <p className="flow-root whitespace-pre-wrap break-words">
                             {message.text}
+                            {!isCustomerMessage && (selected.channel === "whatsapp" || selected.channel === "instagram") ? (
+                              <span className={`ml-2 inline-block text-[10px] font-medium ${message.deliveryStatus === "failed" ? "text-rose-200" : "text-indigo-100"}`} title={message.deliveryFailureCategory ? `Provider failure: ${message.deliveryFailureCategory}` : undefined}>
+                                · {getDeliveryStatusLabel(message, selected.channel)}
+                              </span>
+                            ) : null}
                             {message.timestamp ? (
                               <span className={`float-right ml-2 mt-1 select-none whitespace-nowrap text-[10px] leading-4 opacity-70 ${isCustomerMessage ? "text-slate-400" : "text-indigo-100"}`} title={!isCustomerMessage ? message.source === "human_agent" ? "Human reply" : "Teviq Brain reply" : undefined}>
                                 {!isCustomerMessage ? message.source === "human_agent" ? <UserRound className="mr-1 inline-block h-3 w-3 align-[-2px]" aria-label="Human reply" /> : <Bot className="mr-1 inline-block h-3 w-3 align-[-2px]" aria-label="Teviq Brain reply" /> : null}

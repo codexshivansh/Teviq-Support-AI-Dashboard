@@ -95,7 +95,7 @@ function localDateTime(value) {
 
 function trialDraft(trial) {
   return {
-    enabled: trial?.enabled || false,
+    accessMode: trial?.access_mode || (trial?.enabled ? "trial" : "disabled"),
     startsAt: localDateTime(trial?.starts_at),
     endsAt: localDateTime(trial?.ends_at),
     maxCallsPerDay: trial?.max_calls_per_day || 10,
@@ -130,7 +130,8 @@ function AiTrialPanel({ brandId, isTeviqAdmin }) {
     setError("");
     try {
       const result = await api.saveAiTrialLimit(brandId, {
-        enabled: draft.enabled,
+        enabled: draft.accessMode !== "disabled",
+        accessMode: draft.accessMode,
         startsAt: new Date(draft.startsAt).toISOString(),
         endsAt: new Date(draft.endsAt).toISOString(),
         maxCallsPerDay: Number(draft.maxCallsPerDay),
@@ -150,12 +151,12 @@ function AiTrialPanel({ brandId, isTeviqAdmin }) {
     <Card className="mt-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-ink">AI trial usage</h2>
+          <h2 className="text-lg font-semibold text-ink">AI access and usage</h2>
           <p className="mt-1 text-sm text-muted">Website, WhatsApp and Instagram · resets at midnight India time · retries count as calls</p>
         </div>
         {usage?.meteringEnabled && isTeviqAdmin && !editing ? (
           <button type="button" onClick={() => setEditing(true)} className="rounded-xl border border-line bg-white/70 px-4 py-2 text-sm font-semibold text-ink hover:bg-white dark:bg-white/5 dark:hover:bg-white/10">
-            Configure trial
+            Configure access
           </button>
         ) : null}
       </div>
@@ -171,19 +172,20 @@ function AiTrialPanel({ brandId, isTeviqAdmin }) {
           {usage.meteringEnabled ? <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">AI calls today<br /><strong className="mt-1 block text-xl text-ink">{usage.calls}{usage.trial?.enabled ? ` / ${usage.trial.max_calls_per_day}` : ""}</strong></p>
             <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">Tokens today<br /><strong className="mt-1 block text-xl text-ink">{usage.tokens.toLocaleString()}{usage.trial?.enabled ? ` / ${usage.trial.max_tokens_per_day.toLocaleString()}` : ""}</strong></p>
-            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">Estimated Groq cost today<br /><strong className="mt-1 block text-xl text-ink">{usage.hasUnknownUsage ? "At least " : ""}${usage.estimatedUsd.toFixed(4)}</strong></p>
+            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">Estimated Groq cost today<br /><strong className="mt-1 block text-xl text-ink">{usage.estimatedUsd == null ? "Unavailable" : `$${usage.estimatedUsd.toFixed(4)}`}</strong></p>
           </div> : null}
-          {usage.meteringEnabled ? <p className="mt-2 text-xs text-muted">Pricing is an estimate; check the Groq invoice for actual billing. Unknown usage is reserved against the token cap.</p> : null}
+          {usage.meteringEnabled ? <p className="mt-3 text-sm text-muted">Access: {usage.trial?.access_mode || (usage.trial?.enabled ? "trial" : "not configured")}. Remaining today: {usage.remainingCalls ?? "—"} calls · {usage.remainingTokens?.toLocaleString() ?? "—"} tokens. Access dates and shared capacity may limit availability.</p> : null}
+          {usage.meteringEnabled ? <p className="mt-2 text-xs text-muted">Calls include retries and are not the same as delivered replies. Unknown usage remains reserved against the token cap. Cost is unavailable when usage or model pricing is unknown; check the provider invoice for final billing.</p> : null}
           {usage.meteringEnabled && isTeviqAdmin && draft && editing ? (
             <form onSubmit={save} className="mt-5 grid gap-4 border-t border-line pt-5 md:grid-cols-2">
-              <label className="text-sm font-medium text-ink">Trial starts (local time)<input required type="datetime-local" value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
-              <label className="text-sm font-medium text-ink">Trial ends (local time)<input required type="datetime-local" value={draft.endsAt} onChange={(event) => setDraft({ ...draft, endsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
+              <label className="text-sm font-medium text-ink">Access starts (local time)<input required type="datetime-local" value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
+              <label className="text-sm font-medium text-ink">Access ends (local time)<input required type="datetime-local" value={draft.endsAt} onChange={(event) => setDraft({ ...draft, endsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
               <label className="text-sm font-medium text-ink">Max AI calls per day<input required type="number" min="1" max="1000" value={draft.maxCallsPerDay} onChange={(event) => setDraft({ ...draft, maxCallsPerDay: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5" /></label>
               <label className="text-sm font-medium text-ink">Max tokens per day<input required type="number" min="1" max="100000" value={draft.maxTokensPerDay} onChange={(event) => setDraft({ ...draft, maxTokensPerDay: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5" /></label>
-              <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} /> Activate this client trial</label>
-              <p className="text-xs text-muted md:col-span-2">Editing this form uses no AI tokens. Saving will update settings only; it will not call Groq.</p>
+              <label className="text-sm font-medium text-ink md:col-span-2">AI access mode<select value={draft.accessMode} onChange={(event) => setDraft({ ...draft, accessMode: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white px-4 py-3 text-ink dark:bg-slate-900"><option value="disabled">Paused — no AI provider calls</option><option value="trial">Trial — limited to configured dates and caps</option><option value="paid">Paid access — limited to configured dates and caps</option></select></label>
+              <p className="text-xs text-muted md:col-span-2">Saving sets access only; it does not collect payment or call AI. Paid access requires a separately agreed subscription. Pausing access blocks new provider calls. Shared service capacity also applies.</p>
               <div className="flex gap-3 md:col-span-2">
-                <button type="submit" disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900">{saving ? "Saving…" : "Save trial settings"}</button>
+                <button type="submit" disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900">{saving ? "Saving…" : "Save access settings"}</button>
                 <button type="button" disabled={saving} onClick={() => { setDraft(trialDraft(usage.trial)); setError(""); setEditing(false); }} className="rounded-xl border border-line bg-white/70 px-4 py-2 text-sm font-semibold text-ink disabled:opacity-50 dark:bg-white/5">Discard changes</button>
               </div>
             </form>
@@ -260,7 +262,7 @@ export function AnalyticsPreview({ brandId, onBrandChange, isTeviqAdmin }) {
         onBrandChange={onBrandChange}
       />
 
-      <AiTrialPanel brandId={brandId} isTeviqAdmin={isTeviqAdmin} />
+      <AiTrialPanel key={brandId} brandId={brandId} isTeviqAdmin={isTeviqAdmin} />
 
       {loading ? <LoadingState label="Loading analytics" /> : null}
       {error && !loading ? <ErrorState message={error} /> : null}

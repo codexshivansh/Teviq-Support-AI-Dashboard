@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bot, Send, UserRound } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
@@ -11,10 +11,20 @@ export function Playground({ brandId, onBrandChange }) {
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const sessions = useRef({});
+  const requestVersion = useRef(0);
+
+  useEffect(() => {
+    requestVersion.current++;
+    setResponse(null);
+    setError("");
+    setLoading(false);
+  }, [brandId]);
 
   async function submit(nextMessage = message) {
     const clean = nextMessage.trim();
     if (!clean) return;
+    const version = ++requestVersion.current;
 
     setMessage(clean);
     setLoading(true);
@@ -25,13 +35,15 @@ export function Playground({ brandId, onBrandChange }) {
       const data = await api.chat({
         brandId,
         message: clean,
-        customerId: `dashboard_${brandId}`
+        sessionToken: sessions.current[brandId]
       });
+      if (version !== requestVersion.current) return;
+      sessions.current[brandId] = data.sessionToken;
       setResponse(data);
     } catch (err) {
-      setError(err.message);
+      if (version === requestVersion.current) setError(err.message);
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
   }
 

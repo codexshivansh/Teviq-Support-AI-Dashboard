@@ -178,14 +178,30 @@ export const api = {
       method: "POST"
     });
   },
-  chat({ brandId, message, customerId }) {
+  chat({ brandId, message, sessionToken }) {
     return request("/api/chat", {
       method: "POST",
       body: JSON.stringify({
         brandId,
         message,
-        customerId
+        sessionToken
       })
+    });
+  },
+  getChannelReviewQueue(brandId, before) {
+    return request(`/api/channel-inbox/${encodeURIComponent(brandId)}${before ? `?before=${encodeURIComponent(before)}` : ''}`, { requiresAuth: true });
+  },
+  getConversationHandoff(brandId, channel, customerId) {
+    return request(`/api/conversations/${encodeURIComponent(brandId)}/${encodeURIComponent(channel)}/${encodeURIComponent(customerId)}/handoff`, { requiresAuth: true });
+  },
+  setConversationHandoff(brandId, channel, customerId, paused) {
+    return request(`/api/conversations/${encodeURIComponent(brandId)}/${encodeURIComponent(channel)}/${encodeURIComponent(customerId)}/handoff`, {
+      requiresAuth: true, method: 'PUT', body: JSON.stringify({ paused })
+    });
+  },
+  reviewChannelMessage(brandId, id, values) {
+    return request(`/api/channel-inbox/${encodeURIComponent(brandId)}/${encodeURIComponent(id)}/review`, {
+      requiresAuth: true, method: 'POST', body: JSON.stringify(values)
     });
   },
   getShopifyStatus(brandId) {
