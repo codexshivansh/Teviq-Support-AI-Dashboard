@@ -95,6 +95,7 @@ function localDateTime(value) {
 
 function trialDraft(trial) {
   return {
+    noCap: trial?.no_cap === true,
     accessMode: trial?.access_mode || (trial?.enabled ? "trial" : "disabled"),
     startsAt: localDateTime(trial?.starts_at),
     endsAt: localDateTime(trial?.ends_at),
@@ -132,8 +133,9 @@ function AiTrialPanel({ brandId, isTeviqAdmin }) {
       const result = await api.saveAiTrialLimit(brandId, {
         enabled: draft.accessMode !== "disabled",
         accessMode: draft.accessMode,
-        startsAt: new Date(draft.startsAt).toISOString(),
-        endsAt: new Date(draft.endsAt).toISOString(),
+        startsAt: draft.accessMode === "internal" ? null : new Date(draft.startsAt).toISOString(),
+        endsAt: draft.accessMode === "internal" ? null : new Date(draft.endsAt).toISOString(),
+        noCap: draft.accessMode === "internal" && draft.noCap,
         maxCallsPerDay: Number(draft.maxCallsPerDay),
         maxTokensPerDay: Number(draft.maxTokensPerDay)
       });
@@ -170,19 +172,22 @@ function AiTrialPanel({ brandId, isTeviqAdmin }) {
       {usage ? (
         <>
           {usage.meteringEnabled ? <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">AI calls today<br /><strong className="mt-1 block text-xl text-ink">{usage.calls}{usage.trial?.enabled ? ` / ${usage.trial.max_calls_per_day}` : ""}</strong></p>
-            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">Tokens today<br /><strong className="mt-1 block text-xl text-ink">{usage.tokens.toLocaleString()}{usage.trial?.enabled ? ` / ${usage.trial.max_tokens_per_day.toLocaleString()}` : ""}</strong></p>
+            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">AI calls today<br /><strong className="mt-1 block text-xl text-ink">{usage.calls}{usage.trial?.no_cap ? " / No cap" : usage.trial?.enabled ? ` / ${usage.trial.max_calls_per_day}` : ""}</strong></p>
+            <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">Tokens today<br /><strong className="mt-1 block text-xl text-ink">{usage.tokens.toLocaleString()}{usage.trial?.no_cap ? " / No cap" : usage.trial?.enabled ? ` / ${usage.trial.max_tokens_per_day.toLocaleString()}` : ""}</strong></p>
             <p className="rounded-2xl border border-line bg-white/70 p-4 text-sm text-muted dark:bg-white/5">Estimated Groq cost today<br /><strong className="mt-1 block text-xl text-ink">{usage.estimatedUsd == null ? "Unavailable" : `$${usage.estimatedUsd.toFixed(4)}`}</strong></p>
           </div> : null}
-          {usage.meteringEnabled ? <p className="mt-3 text-sm text-muted">Access: {usage.trial?.access_mode || (usage.trial?.enabled ? "trial" : "not configured")}. Remaining today: {usage.remainingCalls ?? "—"} calls · {usage.remainingTokens?.toLocaleString() ?? "—"} tokens. Access dates and shared capacity may limit availability.</p> : null}
+          {usage.meteringEnabled ? <p className="mt-3 text-sm text-muted">Access: {usage.trial?.access_mode || (usage.trial?.enabled ? "trial" : "not configured")}. Remaining today: {usage.remainingCalls ?? "—"} calls · {usage.remainingTokens?.toLocaleString() ?? "—"} tokens. {usage.trial?.access_mode === "internal" ? "No expiry. Provider rate limits and availability still apply." : "Access dates and shared capacity may limit availability."}</p> : null}
           {usage.meteringEnabled ? <p className="mt-2 text-xs text-muted">Calls include retries and are not the same as delivered replies. Unknown usage remains reserved against the token cap. Cost is unavailable when usage or model pricing is unknown; check the provider invoice for final billing.</p> : null}
           {usage.meteringEnabled && isTeviqAdmin && draft && editing ? (
             <form onSubmit={save} className="mt-5 grid gap-4 border-t border-line pt-5 md:grid-cols-2">
-              <label className="text-sm font-medium text-ink">Access starts (local time)<input required type="datetime-local" value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
+              {draft.accessMode !== "internal" && <><label className="text-sm font-medium text-ink">Access starts (local time)<input required type="datetime-local" value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
               <label className="text-sm font-medium text-ink">Access ends (local time)<input required type="datetime-local" value={draft.endsAt} onChange={(event) => setDraft({ ...draft, endsAt: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5 dark:[color-scheme:dark]" /></label>
-              <label className="text-sm font-medium text-ink">Max AI calls per day<input required type="number" min="1" max="1000" value={draft.maxCallsPerDay} onChange={(event) => setDraft({ ...draft, maxCallsPerDay: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5" /></label>
+              </>}
+              {!draft.noCap && <><label className="text-sm font-medium text-ink">Max AI calls per day<input required type="number" min="1" max="1000" value={draft.maxCallsPerDay} onChange={(event) => setDraft({ ...draft, maxCallsPerDay: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5" /></label>
               <label className="text-sm font-medium text-ink">Max tokens per day<input required type="number" min="1" max="100000" value={draft.maxTokensPerDay} onChange={(event) => setDraft({ ...draft, maxTokensPerDay: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white/80 px-4 py-3 text-sm text-ink outline-none focus:border-slate-400 dark:bg-white/5" /></label>
-              <label className="text-sm font-medium text-ink md:col-span-2">AI access mode<select value={draft.accessMode} onChange={(event) => setDraft({ ...draft, accessMode: event.target.value })} className="mt-2 w-full rounded-2xl border border-line bg-white px-4 py-3 text-ink dark:bg-slate-900"><option value="disabled">Paused — no AI provider calls</option><option value="trial">Trial — limited to configured dates and caps</option><option value="paid">Paid access — limited to configured dates and caps</option></select></label>
+              </>}
+              <label className="text-sm font-medium text-ink md:col-span-2">AI access mode<select value={draft.accessMode} onChange={(event) => setDraft({ ...draft, accessMode: event.target.value, noCap: false })} className="mt-2 w-full rounded-2xl border border-line bg-white px-4 py-3 text-ink dark:bg-slate-900">{brandId === "teviq" && <option value="internal">Internal — no expiry (own workspace only)</option>}<option value="disabled">Paused — no AI provider calls</option><option value="trial">Trial — limited to configured dates and caps</option><option value="paid">Paid access — limited to configured dates and caps</option></select></label>
+              {brandId === "teviq" && draft.accessMode === "internal" && <label className="text-sm md:col-span-2"><input type="checkbox" checked={draft.noCap} onChange={(event) => setDraft({ ...draft, noCap: event.target.checked })} /> No cap — remove app daily limits for this workspace. Usage is still recorded; provider limits and charges still apply.</label>}
               <p className="text-xs text-muted md:col-span-2">Saving sets access only; it does not collect payment or call AI. Paid access requires a separately agreed subscription. Pausing access blocks new provider calls. Shared service capacity also applies.</p>
               <div className="flex gap-3 md:col-span-2">
                 <button type="submit" disabled={saving} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 dark:bg-white dark:text-slate-900">{saving ? "Saving…" : "Save access settings"}</button>
