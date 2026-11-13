@@ -1,3 +1,4 @@
+import { rememberPurchase } from "./services/billingJourney";
 import { AnimatePresence, motion } from "framer-motion";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Layout } from "./components/Layout";
@@ -6,6 +7,8 @@ import { useBrands } from "./hooks/useBrands";
 import { LoginPage } from "./components/LoginPage";
 import { useTeviqAuth } from "./auth/AuthContext";
 import { setAuthTokenGetter } from "./services/api";
+
+rememberPurchase(window.location.search, sessionStorage);
 
 const ONBOARDING_MINIMIZED_KEY = "teviq_onboarding_minimized";
 
@@ -23,7 +26,10 @@ const WidgetInstall = lazyNamed(() => import("./pages/WidgetInstall"), "WidgetIn
 const Settings = lazyNamed(() => import("./pages/Settings"), "Settings");
 const Onboarding = lazyNamed(() => import("./pages/Onboarding"), "Onboarding");
 
+const Billing = lazyNamed(() => import("./pages/Billing"), "Billing");
+
 const pages = {
+  billing: import.meta.env.MODE !== "production" && import.meta.env.VITE_BILLING_TEST_ENABLED === "true" ? Billing : Home,
   home: Home,
   conversations: Conversations,
   knowledge: KnowledgeBase,
@@ -35,6 +41,7 @@ const pages = {
 };
 
 const pagePaths = {
+  billing: "/billing",
   home: "/",
   conversations: "/conversations",
   knowledge: "/knowledge",
@@ -220,7 +227,7 @@ export default function App() {
           onComplete={() => {
             setOnboardingCompleteOverride(true);
             setOnboardingMinimized(false);
-            navigate("home");
+            navigate(rememberPurchase(window.location.search, sessionStorage) ? "billing" : "home");
           }}
         />
       </Suspense>

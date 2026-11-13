@@ -71,6 +71,13 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  subscriptionPlans() { return request('/api/subscriptions/plans', { requiresAuth: true }); },
+  subscriptionStatus(brandId) { return request(`/api/subscriptions/${encodeURIComponent(brandId)}`, { requiresAuth: true }); },
+  startSubscription(brandId, planId, consentVersion) { return request(`/api/subscriptions/${encodeURIComponent(brandId)}`, { requiresAuth: true, method: 'POST', body: JSON.stringify({ planId, consentVersion }) }); },
+  subscriptionAction(brandId, action) { return request(`/api/subscriptions/${encodeURIComponent(brandId)}/${action}`, { requiresAuth: true, method: 'POST' }); },
+  getBillingPlans() { return request('/api/billing/plans', { requiresAuth: true }); },
+  createBillingOrder(brandId, planId) { return request(`/api/billing/${encodeURIComponent(brandId)}/orders`, { requiresAuth: true, method: 'POST', body: JSON.stringify({ planId }) }); },
+  reconcileBillingOrder(brandId, orderId) { return request(`/api/billing/${encodeURIComponent(brandId)}/orders/${encodeURIComponent(orderId)}/reconcile`, { requiresAuth: true, method: 'POST' }); },
   getAiTrialUsage(brandId) {
     return request(`/api/ai-trial/${encodeURIComponent(brandId)}`, { requiresAuth: true });
   },

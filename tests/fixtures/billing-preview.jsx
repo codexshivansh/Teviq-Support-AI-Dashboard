@@ -1,0 +1,12 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { Billing } from '../../src/pages/Billing';
+import { api } from '../../src/services/api';
+import '../../src/styles.css';
+let current=null;
+api.subscriptionPlans=async()=>({consentVersion:'fixture',plans:[{id:'starter-test-v1',name:'Starter',amount_paise:99900,features:['widget']},{id:'standard-test-v1',name:'Standard',amount_paise:249900,features:['widget','whatsapp']},{id:'growth-test-v1',name:'Growth',amount_paise:319900,features:['widget','whatsapp','instagram']}]});
+api.subscriptionStatus=async()=>({subscription:current});
+api.startSubscription=async(_,planId)=>({keyId:'fixture',subscription:current={id:'fixture',planId,providerSubscriptionId:'sub_fixture',amount:99900,currency:'INR',trialStartedAt:new Date().toISOString(),trialEndsAt:new Date(Date.now()+72*3600000).toISOString(),status:'authenticated',cancelled:false}});
+api.subscriptionAction=async(_,action)=>{if(action==='cancel')current={...current,cancelRequested:true,cancelled:true,status:'cancelled'};return {subscription:current};};
+window.Razorpay=class {constructor(options){this.options=options;}open(){this.options.handler();}};
+createRoot(document.getElementById('root')).render(<><p style={{padding:16,background:'#fff3cd'}}>LOCAL QA FIXTURE — simulated gateway; no external payments.</p><Billing brandId="qa-client"/></>);
