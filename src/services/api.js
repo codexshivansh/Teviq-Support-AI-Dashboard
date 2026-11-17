@@ -71,6 +71,9 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  checkoutPlans() { return request('/api/checkout-plans', { requiresAuth: true }); },
+  createCheckoutOrder(payload) { return request('/api/create-order', { requiresAuth: true, method: 'POST', body: JSON.stringify(payload) }); },
+  verifyCheckoutPayment(payload) { return request('/api/verify-payment', { requiresAuth: true, method: 'POST', body: JSON.stringify(payload) }); },
   subscriptionPlans() { return request('/api/subscriptions/plans', { requiresAuth: true }); },
   subscriptionStatus(brandId) { return request(`/api/subscriptions/${encodeURIComponent(brandId)}`, { requiresAuth: true }); },
   startSubscription(brandId, planId, consentVersion) { return request(`/api/subscriptions/${encodeURIComponent(brandId)}`, { requiresAuth: true, method: 'POST', body: JSON.stringify({ planId, consentVersion }) }); },

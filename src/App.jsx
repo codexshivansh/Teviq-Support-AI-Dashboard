@@ -29,7 +29,7 @@ const Onboarding = lazyNamed(() => import("./pages/Onboarding"), "Onboarding");
 const Billing = lazyNamed(() => import("./pages/Billing"), "Billing");
 
 const pages = {
-  billing: import.meta.env.MODE !== "production" && import.meta.env.VITE_BILLING_TEST_ENABLED === "true" ? Billing : Home,
+  billing: Billing,
   home: Home,
   conversations: Conversations,
   knowledge: KnowledgeBase,

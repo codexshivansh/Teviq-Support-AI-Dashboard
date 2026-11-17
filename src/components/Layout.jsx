@@ -24,7 +24,7 @@ import { useBrands } from "../hooks/useBrands";
 import { useTheme } from "../theme/ThemeContext";
 
 const navItems = [
-  ...((import.meta.env.MODE !== "production" && import.meta.env.VITE_BILLING_TEST_ENABLED === "true") ? [{ id: "billing", label: "Plans & payment", icon: ShoppingBag }] : []),
+  { id: "billing", label: "Plans & payment", icon: ShoppingBag },
   { id: "home", label: "Overview", icon: Home },
   { id: "conversations", label: "Conversations", icon: MessagesSquare },
   { id: "knowledge", label: "Knowledge", icon: Database },
